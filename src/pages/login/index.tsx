@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { View, Text, Image, TextInput, Button, TouchableOpacity } from "react-native"
+import { View, Text, Image, TextInput, Button, TouchableOpacity, Linking, Alert } from "react-native"
 import { style } from "./styles";
 import imageLogo from "../../assets/login.png"
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
@@ -11,6 +11,30 @@ export default function Login() {
 
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
+    const [loading, setLoading] = useState(false);
+
+
+    async function getLoading(loading: any) {
+        setLoading(true)
+
+        try {
+
+            if(!email || !senha) {
+                return Alert.alert("Atenção:", "informe os campos obrigatórios! ");
+            }
+
+            console.log("Logou")
+            
+            
+        } catch (error) {
+            console.log(error)
+        }
+
+        setLoading(false)
+        
+        
+
+    }
 
 
     return (
@@ -19,7 +43,7 @@ export default function Login() {
             <View style={style.boxImage}>
                <Image
                     source={imageLogo}
-                    alt="Image"
+                    alt="Imagem"
                    style={style.imageSize}
                 
                 />
@@ -38,7 +62,7 @@ export default function Login() {
                         placeholder="Digite seu email"
                         value={email}
                         onChangeText={(e) => setEmail(e)}
-                     />
+                    />
 
                     <MaterialIcons 
                         name="email"
@@ -55,11 +79,11 @@ export default function Login() {
                 <View style={style.boxInput}>
 
                     <TextInput style={style.Input} 
-                            placeholder="Digite sua senha"
-                            secureTextEntry={true} // ativa a máscara de senha
-                            value={senha}
-                            onChangeText={(e) => setSenha(e)}
-                     />
+                        placeholder="Digite sua senha"
+                        secureTextEntry={true} // ativa a máscara de senha
+                        value={senha}
+                        onChangeText={(e) => setSenha(e)}
+                    />
 
                     <MaterialIcons 
                         name="lock"
@@ -72,11 +96,11 @@ export default function Login() {
 
             </View>
 
-             <TouchableOpacity style={style.boxButton} onPress={() => {}}>
-                    <Text style={style.buttonText}>Enter</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={style.boxButton} onPress={() => {getLoading(loading)}}>
+                <Text style={style.buttonText}>Enter</Text>
+            </TouchableOpacity>
 
-            <Text style={style.boxSignUp}>Não tem conta crie agora</Text>
+            <Text style={style.boxSignUp}>Não tem conta? <Text style={style.link} onPress={() => Linking.openURL("http://google.com")}>Crie agora</Text></Text>
 
         </View>
     )

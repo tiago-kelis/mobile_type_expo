@@ -109,6 +109,11 @@ export const style = StyleSheet.create({
     boxSignUp: {
         marginTop: 100,
         color: "#7272749e"
+    },
+
+    link: {
+        color: "blue",
+        textDecorationLine: "none"
     }
 
     
