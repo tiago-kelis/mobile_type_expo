@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,11 +16,33 @@ export default function Home() {
   // ✅ Receber dados do usuário logado
   const { user } = route.params;
 
+  // Voltar ao Dashboard
+  function handleBackToDashboard() {
+    navigation.navigate('Dashboard', { user });
+  }
+
+  // Logout
   function handleLogout() {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          }
+        }
+      ]
+    );
   }
 
   // Formatar data
@@ -29,6 +51,12 @@ export default function Home() {
     
     try {
       const date = new Date(dateString);
+      
+      // Verificar se é válida
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+      
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -36,13 +64,23 @@ export default function Home() {
         hour: '2-digit',
         minute: '2-digit'
       });
-    } catch {
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
       return 'Data inválida';
     }
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* ✅ Botão Voltar - MOVIDO PARA O TOPO */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={handleBackToDashboard}
+      >
+        <MaterialIcons name="arrow-back" size={24} color="#007bff" />
+        <Text style={styles.backButtonText}>Voltar ao Dashboard</Text>
+      </TouchableOpacity>
+
       {/* Header com Avatar */}
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
@@ -100,7 +138,7 @@ export default function Home() {
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={() => navigation.navigate('User')}
+          onPress={() => navigation.navigate('User', { user })}
         >
           <MaterialIcons name="edit" size={24} color="#fff" />
           <Text style={styles.actionButtonText}>Editar Perfil</Text>
@@ -109,8 +147,7 @@ export default function Home() {
         <TouchableOpacity 
           style={[styles.actionButton, styles.settingsButton]}
           onPress={() => {
-            // Adicionar navegação para configurações depois
-            console.log('Ir para configurações');
+            Alert.alert('Em breve', 'Funcionalidade em desenvolvimento');
           }}
         >
           <MaterialIcons name="settings" size={24} color="#fff" />
@@ -126,7 +163,7 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      {/* Estatísticas (opcional) */}
+      {/* Estatísticas */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <MaterialIcons name="access-time" size={32} color="#28a745" />

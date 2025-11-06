@@ -130,5 +130,18 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 4,
+  },  
+  backButton: { // Adicione no styles.ts do Home
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    marginBottom: 10,
   },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007bff',
+    marginLeft: 10,
+    fontWeight: '500',
+},
 });
