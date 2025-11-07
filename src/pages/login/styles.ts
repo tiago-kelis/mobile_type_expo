@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet } from "react-native";
 // import { LinearGradient } from 'expo-linear-gradient';
 
@@ -5,8 +6,7 @@ export const style = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(162, 166, 173, 0.93)",
+        justifyContent: "center",        
         padding: 5,        
         fontWeight: "black",
         gap: 40,
@@ -17,7 +17,7 @@ export const style = StyleSheet.create({
 
     boxImage: {      
         textAlign: "center",
-        backgroundColor: "#abc87cff",
+        backgroundColor: "#0308399e",
         width: "27%",
         height: "10%",
         marginBottom: 20,
@@ -25,15 +25,16 @@ export const style = StyleSheet.create({
         alignItems: "center",
         borderRadius: 50,
         borderWidth: 2,
-        borderColor: "#2a2727e9",        
+        borderColor: "#4f156aff",        
 
     },
 
 
     boxSaudacao: {
-        color: "#3ea1d2ff",
+        color: "#235975ff",
         marginTop: -40,
-        marginBottom: 20
+        marginBottom: 20,
+        fontWeight: "bold",
     },
 
 
@@ -52,21 +53,27 @@ export const style = StyleSheet.create({
 
     boxButton: {
         textAlign: "center", 
-        justifyContent: "center",      
+        justifyContent: "center", 
+        alignItems: "center",     
         width: "30%",
         height: "5%",
-        paddingLeft: 45,
-        backgroundColor: "#a0d5729e",
+        paddingLeft:35,
+        paddingRight:35,
+        backgroundColor: "#0308399e",
         borderRadius: 20,
         borderWidth: 2,
-        borderColor: "#423f3fff"      
+        borderColor: "#4f156aff"      
 
     },
 
     buttonText: {
-        color: '#423f3fff',
+        justifyContent: "center",
+        textAlign: "center",
+        color: '#235975ff',
         fontWeight: 'bold',
-  },
+        
+       
+    },
 
 
     imageSize: {
@@ -76,14 +83,14 @@ export const style = StyleSheet.create({
 
     boxText: {
         textAlign: "justify",
-        color: "#302d2dff",
+        color: "#0d4a79ff",
     
     },
 
     Input: {              
         width:"50%",
         height: "100%",
-        color: "#504e4e",       
+        color: "#050c27ff",       
         borderRadius: 12,
         borderBottomLeftRadius: 2,
         paddingLeft: 10,
@@ -100,7 +107,7 @@ export const style = StyleSheet.create({
         paddingRight: 5,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#7e7878e9"
+        borderColor: "#9817c3e9"
         
     },
 
