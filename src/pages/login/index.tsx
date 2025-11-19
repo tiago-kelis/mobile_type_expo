@@ -20,35 +20,43 @@ export default function Login() {
     const [senha, setSenha] = useState("");
     const [loading, setLoading] = useState(false);
 
-   function handleLogin() {
-    setLoading(true);
+    // Login.tsx - função handleLogin modificada
+    function handleLogin() {
+        setLoading(true);
 
-    try {
-        if(!email || !senha) {
-            Alert.alert("Atenção:", "Informe os campos obrigatórios!");
-            setLoading(false);
-            return;
-        }
+        try {
+            if(!email || !senha) {
+                Alert.alert("Atenção:", "Informe os campos obrigatórios!");
+                setLoading(false);
+                return;
+            }
 
-        const user = validateLogin(email, senha);
+            const user = validateLogin(email, senha);
 
-        if (user) {
-            console.log("✅ Login realizado:", user);
-            Alert.alert("Sucesso", `Bem-vindo, ${user.name}!`);
+            if (user) {
+                console.log("✅ Login realizado:", user);
+                console.log("🔐 Role do usuário:", user.role);
+                Alert.alert("Sucesso", `Bem-vindo, ${user.name}!`);
+                
+                // ✅ Navegar baseado no role do usuário
+                if (user.role === 'admin') {
+                    navigation.navigate('AdminDashboard', { user });
+                } else {
+                    navigation.navigate('Dashboard', { user });
+                }
+            } else {
+                Alert.alert("Erro", "Email ou senha incorretos!");
+            }
             
-            // ✅ Navegar para Dashboard ao invés de Home
-            navigation.navigate('Dashboard', {user} );
-        } else {
-            Alert.alert("Erro", "Email ou senha incorretos!");
+        } catch (error) {
+            console.error("❌ Erro no login:", error);
+            Alert.alert("Erro", "Ocorreu um erro ao fazer login");
         }
-        
-    } catch (error) {
-        console.error("❌ Erro no login:", error);
-        Alert.alert("Erro", "Ocorreu um erro ao fazer login");
+
+        setLoading(false);
     }
 
-    setLoading(false);
-}
+
 
     return (
 

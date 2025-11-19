@@ -1,12 +1,13 @@
-// Tipo reutilizável para o usuário
+// ✅ Tipo reutilizável para o usuário COM role
 export type UserData = {
   id: number;
   name: string;
   email: string;
+  role: 'user' | 'admin'; // ✅ NOVA propriedade
   created_at?: string;
 };
 
-// Definição de todas as rotas e seus parâmetros
+// ✅ Definição de todas as rotas e seus parâmetros
 export type RootStackParamList = {
   // Login não recebe parâmetros
   Login: undefined;
@@ -16,8 +17,18 @@ export type RootStackParamList = {
     user: UserData;
   };
   
+  // ✅ NOVA rota - AdminDashboard recebe os dados do usuário admin
+  AdminDashboard: {
+    user: UserData;
+  };
+  
   // Home recebe os dados do usuário logado
   Home: {
+    user: UserData;
+  };
+
+  // ✅ NOVA ROTA: Appointments recebe os dados do usuário
+  Appointments: {
     user: UserData;
   };
   

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,8 +13,26 @@ export default function Dashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
   const route = useRoute<DashboardScreenRouteProp>();
   
-  // ✅ Receber dados do usuário logado
   const { user } = route.params;
+
+  // ✅ Verificação de segurança - redirecionar admin
+  useEffect(() => {
+    if (user.role === 'admin') {
+      console.log('🔄 Admin redirecionado para AdminDashboard');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AdminDashboard', params: { user } }],
+      });
+    }
+  }, []);
+
+  if (user.role === 'admin') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Redirecionando para área administrativa...</Text>
+      </View>
+    );
+  }
 
   // 🏠 Navegar para Home
   function handleGoToHome() {
@@ -24,6 +42,11 @@ export default function Dashboard() {
   // 👤 Navegar para Perfil/User
   function handleGoToProfile() {
     navigation.navigate('User', { user });
+  }
+
+  // ✅ 📅 NOVA FUNÇÃO: Navegar para Agendamentos
+  function handleGoToAppointments() {
+    navigation.navigate('Appointments', { user });
   }
 
   // 🚪 Fazer Logout
@@ -77,13 +100,17 @@ export default function Dashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header com Avatar e Saudação */}
+      {/* Header com informações do usuário */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greetingText}>{getGreeting()},</Text>
             <Text style={styles.userName}>{user.name}</Text>
             <Text style={styles.userEmail}>{user.email}</Text>
+            <View style={styles.userBadge}>
+              <MaterialIcons name="person" size={14} color="#007bff" />
+              <Text style={styles.userBadgeText}>USUÁRIO</Text>
+            </View>
           </View>
           
           <TouchableOpacity 
@@ -104,55 +131,89 @@ export default function Dashboard() {
             <Text style={styles.infoText}>Membro desde {formatDate(user.created_at)}</Text>
           </View>
         </View>
-      </View>
+      </View>      
 
-      {/* Cards de Navegação Principal */}
+      {/* ✅ MODIFICADO: Cards de Navegação Principal - Grid 2x2 com 3 cards */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📱 Menu Principal</Text>
         
         <View style={styles.cardsGrid}>
-          {/* Card Home */}
+          {/* Card Home - Posição 1 (linha 1, coluna 1) */}
           <TouchableOpacity 
             style={[styles.card, styles.cardHome]}
             onPress={handleGoToHome}
             activeOpacity={0.7}
           >
-            <View style={styles.cardIcon}>
-              <MaterialIcons name="home" size={40} color="#007bff" />
+            <View>
+              <View style={styles.cardIcon}>
+                <MaterialIcons name="home" size={40} color="#00ffd0ff" />
+              </View>
+              <Text style={styles.cardTitle}>Home</Text>
+              <Text style={styles.cardDescription}>
+                Ver suas informações completas
+              </Text>
             </View>
-            <Text style={styles.cardTitle}>Home</Text>
-            <Text style={styles.cardDescription}>
-              Ver suas informações completas
-            </Text>
             <View style={styles.cardArrow}>
-              <MaterialIcons name="arrow-forward" size={20} color="#007bff" />
+              <MaterialIcons name="arrow-forward" size={20} color="#00ffd0ff" />
             </View>
           </TouchableOpacity>
 
-          {/* Card Perfil */}
+          {/* Card Perfil - Posição 2 (linha 1, coluna 2) */}
           <TouchableOpacity 
             style={[styles.card, styles.cardProfile]}
             onPress={handleGoToProfile}
             activeOpacity={0.7}
           >
-            <View style={styles.cardIcon}>
-              <MaterialIcons name="person" size={40} color="#28a745" />
+            <View>
+              <View style={styles.cardIcon}>
+                <MaterialIcons name="person" size={40} color="#00ffd0ff" />
+              </View>
+              <Text style={styles.cardTitle}>Perfil</Text>
+              <Text style={styles.cardDescription}>
+                Editar dados cadastrais
+              </Text>
             </View>
-            <Text style={styles.cardTitle}>Perfil</Text>
-            <Text style={styles.cardDescription}>
-              Editar dados cadastrais
-            </Text>
             <View style={styles.cardArrow}>
-              <MaterialIcons name="arrow-forward" size={20} color="#28a745" />
+              <MaterialIcons name="arrow-forward" size={20} color="#00ffd0ff" />
+            </View>
+          </TouchableOpacity>
+
+          {/* Card Agendamentos - Posição 3 (linha 2, coluna 1) */}
+          <TouchableOpacity 
+            style={[styles.card, styles.cardAppointments]}
+            onPress={handleGoToAppointments}
+            activeOpacity={0.7}
+          >
+            <View>
+              <View style={styles.cardIcon}>
+                <MaterialIcons name="event" size={40} color="#ff6b35" />
+              </View>
+              <Text style={styles.cardTitle}>Agendamentos</Text>
+              <Text style={styles.cardDescription}>
+                Marcar horários e ver fila
+              </Text>
+            </View>
+            <View style={styles.cardArrow}>
+              <MaterialIcons name="arrow-forward" size={20} color="#ff6b35" />
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Ações Rápidas */}
+      {/* ✅ MODIFICADO: Ações Rápidas - Agendamentos adicionado */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚡ Ações Rápidas</Text>
         
+        {/* ✅ NOVA AÇÃO: Agendamentos */}
+        <TouchableOpacity 
+          style={styles.quickActionButton}
+          onPress={handleGoToAppointments}
+        >
+          <MaterialIcons name="event" size={24} color="#ff6b35" />
+          <Text style={styles.quickActionText}>Agendar Horário</Text>
+          <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={styles.quickActionButton}
           onPress={handleGoToProfile}
@@ -217,10 +278,7 @@ export default function Dashboard() {
       </TouchableOpacity>
 
       {/* Rodapé */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          🔒 Sua conexão está segura
-        </Text>
+      <View style={styles.footer}>       
         <Text style={styles.footerVersion}>
           Versão 1.0.0
         </Text>

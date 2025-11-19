@@ -5,11 +5,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // Importar as telas
 import Login from '../pages/login';
 import Dashboard from '../pages/dashboard';
+import AdminDashboard from '../pages/adminDashboard'; // ✅ NOVA importação
 import Home from '../pages/home';
 import User from '../pages/user';
 
 // Importar tipagem
 import { RootStackParamList } from './types';
+import Appointments from '../pages/appointments';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -20,8 +22,8 @@ export default function Routes() {
         initialRouteName="Login"
         screenOptions={{ 
           headerShown: false,
-          animation: 'slide_from_right', // Animação suave entre telas
-          contentStyle: { backgroundColor: '#fff' }, // Fundo branco padrão
+          animation: 'slide_from_right',
+          contentStyle: { backgroundColor: '#fff' },
         }}
       >
         {/* Tela de Login - Tela inicial */}
@@ -29,17 +31,27 @@ export default function Routes() {
           name="Login" 
           component={Login}
           options={{
-            animation: 'fade', // Login entra com fade
+            animation: 'fade',
           }}
         />
         
-        {/* Dashboard - Hub principal após login */}
+        {/* Dashboard - Hub principal após login (usuário comum) */}
         <Stack.Screen 
           name="Dashboard" 
           component={Dashboard}
           options={{
-            gestureEnabled: false, // Impede voltar com gesto de swipe
-            animation: 'slide_from_bottom', // Dashboard sobe de baixo
+            gestureEnabled: false,
+            animation: 'slide_from_bottom',
+          }}
+        />
+        
+        {/* ✅ NOVA tela - AdminDashboard - Hub administrativo */}
+        <Stack.Screen 
+          name="AdminDashboard" 
+          component={AdminDashboard}
+          options={{
+            gestureEnabled: false, // Impede voltar com gesto
+            animation: 'slide_from_bottom',
           }}
         />
         
@@ -47,6 +59,15 @@ export default function Routes() {
         <Stack.Screen 
           name="Home" 
           component={Home}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+
+         {/* ✅ NOVA ROTA: Appointments */}
+        <Stack.Screen 
+          name="Appointments" 
+          component={Appointments}
           options={{
             animation: 'slide_from_right',
           }}

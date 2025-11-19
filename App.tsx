@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { debugAllUsers, forceCreateAdmin, makeUserAdmin } from './src/database/services/userServices';
 import { 
   View, 
   Text, 
@@ -23,31 +24,52 @@ export default function App() {
     initializeApp();
   }, []);
 
+
   async function initializeApp() {
-    try {
-      console.log('🚀 Iniciando aplicação...');
+  try {
+    console.log('🚀 Iniciando aplicação...');
+    
+    // Inicializar banco de dados
+    const success = initDatabase();
+    
+    if (success) {
+      console.log('✅ Banco de dados pronto!');
       
-      // Inicializar banco de dados
-      const success = initDatabase();
+      // ✅ ADICIONADO: Debug e configuração de admin
+      console.log('🔍 Verificando usuários...');
+      debugAllUsers();
       
-      if (success) {
-        console.log('✅ Banco de dados pronto!');
-        
-        // Mostrar estatísticas
-        dbUtils.stats();
+      // ✅ Garantir que existe um admin
+      const adminCreated = forceCreateAdmin();
+      if (adminCreated) {
+        console.log('✅ Admin padrão garantido: admin@sistema.com / admin123');
       }
       
-      // Simular carregamento
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1500);
+      // ✅ ADICIONAL: Promover usuário específico se quiser
+      const promoted = makeUserAdmin('adm01@gmail.com');
+      if (promoted) {
+        console.log('✅ adm01@gmail.com promovido para admin!');
+      }
       
-    } catch (error: any) {
-      console.error('❌ Erro ao inicializar app:', error);
-      setDbError(error.message || 'Erro ao inicializar banco de dados');
-      setIsLoading(false);
+      // ✅ Debug final para confirmar admins
+      console.log('👑 Verificando admins finais...');
+      debugAllUsers();
+      
+      // Mostrar estatísticas
+      dbUtils.stats();
     }
+    
+    // Simular carregamento
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+  } catch (error: any) {
+    console.error('❌ Erro ao inicializar app:', error);
+    setDbError(error.message || 'Erro ao inicializar banco de dados');
+    setIsLoading(false);
   }
+}
 
   // Tela de loading
   if (isLoading) {
