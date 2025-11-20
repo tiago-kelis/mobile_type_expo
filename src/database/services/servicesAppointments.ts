@@ -57,20 +57,96 @@ export function createAppointment(
   }
 }
 
-// ✅ Obter próxima posição na fila para uma data específica
+
+
+// ✅ CORRIGIR: getNextQueuePosition
 function getNextQueuePosition(date: string): number {
   try {
+    console.log('🔍 Calculando próxima posição para:', date);
+    
+    // ✅ NOVO: Só considerar agendamentos realmente ativos
     const result = database.getFirstSync<{ max_position: number }>(
-      'SELECT COALESCE(MAX(queue_position), 0) as max_position FROM appointments WHERE scheduled_date = ? AND status != ?',
-      [date, 'cancelado']
+      `SELECT COALESCE(MAX(queue_position), 0) as max_position 
+       FROM appointments 
+       WHERE scheduled_date = ? 
+       AND status IN ('agendado', 'em_atendimento')`, // ← Só ativos
+      [date]
     );
     
-    return (result?.max_position || 0) + 1;
+    const nextPosition = (result?.max_position || 0) + 1;
+    console.log('📊 Próxima posição calculada:', nextPosition);
+    
+    return nextPosition;
   } catch (error) {
     console.error('❌ Erro ao calcular posição na fila:', error);
-    return 1;
+    
+    // ✅ MELHOR: Tentar calcular manualmente em caso de erro
+    try {
+      const count = database.getFirstSync<{ count: number }>(
+        `SELECT COUNT(*) as count 
+         FROM appointments 
+         WHERE scheduled_date = ? 
+         AND status IN ('agendado', 'em_atendimento')`,
+        [date]
+      );
+      
+      return (count?.count || 0) + 1;
+    } catch {
+      return 1;
+    }
   }
 }
+
+
+
+// ✅ NOVA: Reorganizar automaticamente após cada mudança
+function autoReorganizePositions(date: string): void {
+  try {
+    console.log('🔄 Auto-reorganizando posições para:', date);
+    
+    // Buscar agendamentos ativos ordenados logicamente
+    const activeAppointments = database.getAllSync<{ id: number; status: string; queue_position: number }>(
+      `SELECT id, status, queue_position
+       FROM appointments 
+       WHERE scheduled_date = ? 
+       AND status IN ('agendado', 'em_atendimento')
+       ORDER BY 
+         CASE 
+           WHEN status = 'em_atendimento' THEN 1
+           WHEN status = 'agendado' THEN 2
+         END,
+         queue_position ASC,
+         created_at ASC`,
+      [date]
+    );
+    
+    if (!activeAppointments || activeAppointments.length === 0) {
+      console.log('ℹ️ Nenhum agendamento ativo para reorganizar');
+      return;
+    }
+    
+    // Atualizar posições sequencialmente
+    activeAppointments.forEach((appointment, index) => {
+      const newPosition = index + 1;
+      
+      // Só atualizar se a posição mudou
+      if (appointment.queue_position !== newPosition) {
+        database.runSync(
+          'UPDATE appointments SET queue_position = ?, updated_at = datetime("now") WHERE id = ?',
+          [newPosition, appointment.id]
+        );
+        console.log(`📝 Agendamento ${appointment.id}: posição ${appointment.queue_position} → ${newPosition}`);
+      }
+    });
+    
+    console.log(`✅ Reorganização concluída - ${activeAppointments.length} agendamentos`);
+  } catch (error) {
+    console.error('❌ Erro na reorganização automática:', error);
+  }
+}
+
+
+
 
 // ✅ Buscar agendamentos por data (fila do dia)
 export function getAppointmentsByDate(date: string): Appointment[] {
@@ -88,10 +164,17 @@ export function getAppointmentsByDate(date: string): Appointment[] {
 }
 
 // ✅ Buscar agendamentos do usuário
+// ✅ IMPLEMENTAÇÃO FINAL RECOMENDADA:
 export function getUserAppointments(userId: number): Appointment[] {
   try {
     const appointments = database.getAllSync<Appointment>(
-      'SELECT * FROM appointments WHERE user_id = ? ORDER BY created_at DESC',
+      `SELECT * FROM appointments 
+       WHERE user_id = ? 
+       AND status IN ('agendado', 'em_atendimento')
+       ORDER BY 
+         CASE WHEN status = 'em_atendimento' THEN 1 ELSE 2 END,
+         scheduled_date ASC, 
+         queue_position ASC`,
       [userId]
     );
     
@@ -103,9 +186,27 @@ export function getUserAppointments(userId: number): Appointment[] {
 }
 
 
-// ✅ Funções específicas para cada ação
+
+// ✅ CORRIGIR: Todas as funções de mudança de status
 export function startAttendingAppointment(appointmentId: number): boolean {
   try {
+    console.log('🚀 Iniciando atendimento:', appointmentId);
+    
+    const appointment = database.getFirstSync<{ scheduled_date: string; status: string }>(
+      'SELECT scheduled_date, status FROM appointments WHERE id = ?',
+      [appointmentId]
+    );
+    
+    if (!appointment) {
+      console.error('❌ Agendamento não encontrado');
+      return false;
+    }
+    
+    if (appointment.status !== 'agendado') {
+      console.warn(`⚠️ Agendamento não está com status 'agendado' (atual: ${appointment.status})`);
+      return false;
+    }
+    
     const result = database.runSync(`
       UPDATE appointments 
       SET status = 'em_atendimento', 
@@ -114,7 +215,15 @@ export function startAttendingAppointment(appointmentId: number): boolean {
       WHERE id = ?
     `, [appointmentId]);
     
-    return result.changes > 0;
+    const success = result.changes > 0;
+    
+    if (success) {
+      console.log('✅ Status alterado para em_atendimento');
+      // ✅ NOVO: Reorganizar automaticamente
+      autoReorganizePositions(appointment.scheduled_date);
+    }
+    
+    return success;
   } catch (error) {
     console.error('❌ Erro ao iniciar atendimento:', error);
     return false;
@@ -123,14 +232,35 @@ export function startAttendingAppointment(appointmentId: number): boolean {
 
 export function completeAppointment(appointmentId: number): boolean {
   try {
+    console.log('🎯 Concluindo atendimento:', appointmentId);
+    
+    const appointment = database.getFirstSync<{ scheduled_date: string; status: string }>(
+      'SELECT scheduled_date, status FROM appointments WHERE id = ?',
+      [appointmentId]
+    );
+    
+    if (!appointment) {
+      console.error('❌ Agendamento não encontrado');
+      return false;
+    }
+    
     const result = database.runSync(`
       UPDATE appointments 
       SET status = 'concluido', 
-          updated_at = datetime("now") 
+          updated_at = datetime("now"),
+          queue_position = 0
       WHERE id = ?
     `, [appointmentId]);
     
-    return result.changes > 0;
+    const success = result.changes > 0;
+    
+    if (success) {
+      console.log('✅ Agendamento concluído');
+      // ✅ NOVO: Reorganizar fila após conclusão
+      autoReorganizePositions(appointment.scheduled_date);
+    }
+    
+    return success;
   } catch (error) {
     console.error('❌ Erro ao concluir atendimento:', error);
     return false;
@@ -139,19 +269,42 @@ export function completeAppointment(appointmentId: number): boolean {
 
 export function cancelAppointmentById(appointmentId: number): boolean {
   try {
+    console.log('❌ Cancelando agendamento:', appointmentId);
+    
+    const appointment = database.getFirstSync<{ scheduled_date: string }>(
+      'SELECT scheduled_date FROM appointments WHERE id = ?',
+      [appointmentId]
+    );
+    
+    if (!appointment) {
+      console.error('❌ Agendamento não encontrado');
+      return false;
+    }
+    
     const result = database.runSync(`
       UPDATE appointments 
       SET status = 'cancelado', 
-          updated_at = datetime("now") 
+          updated_at = datetime("now"),
+          queue_position = 0
       WHERE id = ?
     `, [appointmentId]);
     
-    return result.changes > 0;
+    const success = result.changes > 0;
+    
+    if (success) {
+      console.log('✅ Agendamento cancelado');
+      // ✅ NOVO: Reorganizar fila após cancelamento
+      autoReorganizePositions(appointment.scheduled_date);
+    }
+    
+    return success;
   } catch (error) {
     console.error('❌ Erro ao cancelar agendamento:', error);
     return false;
   }
 }
+
+
 
 // ✅ Função genérica mais simples
 export function updateAppointmentStatus(
@@ -204,7 +357,9 @@ function reorderQueue(date: string): void {
   }
 }
 
-// ✅ Estatísticas de agendamentos
+
+
+// ✅ CORRIGIR: getAppointmentStats - contar agendamentos para hoje
 export function getAppointmentStats(): {
   total: number;
   agendados: number;
@@ -235,10 +390,15 @@ export function getAppointmentStats(): {
       ['concluido']
     )?.count || 0;
     
+    // ✅ CORRIGIDO: Contar agendamentos AGENDADOS PARA hoje (não criados hoje)
     const hoje = database.getFirstSync<{ count: number }>(
-      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ? AND status != ?',
-      [today, 'cancelado']
+      `SELECT COUNT(*) as count FROM appointments 
+       WHERE scheduled_date = ? 
+       AND status IN ('agendado', 'em_atendimento')`, // ✅ Só os ativos para hoje
+      [today]
     )?.count || 0;
+    
+    console.log(`📊 Stats - Total: ${total}, Hoje: ${hoje}, Agendados: ${agendados}`);
     
     return { total, agendados, em_atendimento, concluidos, hoje };
   } catch (error) {
@@ -246,6 +406,149 @@ export function getAppointmentStats(): {
     return { total: 0, agendados: 0, em_atendimento: 0, concluidos: 0, hoje: 0 };
   }
 }
+
+
+
+
+
+// ✅ NOVA: Agendamentos de hoje (para relatório detalhado)
+export function getTodayAppointments(): Appointment[] {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const appointments = database.getAllSync<Appointment>(
+      `SELECT * FROM appointments 
+       WHERE scheduled_date = ? 
+       AND status IN ('agendado', 'em_atendimento') 
+       ORDER BY queue_position ASC, scheduled_time ASC`,
+      [today]
+    );
+    
+    return appointments || [];
+  } catch (error) {
+    console.error('❌ Erro ao buscar agendamentos de hoje:', error);
+    return [];
+  }
+}
+
+// ✅ NOVA: Histórico de agendamentos (concluídos e cancelados)
+export function getAppointmentsHistory(limit: number = 50): Appointment[] {
+  try {
+    const appointments = database.getAllSync<Appointment>(
+      `SELECT * FROM appointments 
+       WHERE status IN ('concluido', 'cancelado') 
+       ORDER BY updated_at DESC, created_at DESC 
+       LIMIT ?`,
+      [limit]
+    );
+    
+    return appointments || [];
+  } catch (error) {
+    console.error('❌ Erro ao buscar histórico:', error);
+    return [];
+  }
+}
+
+// ✅ NOVA: Estatísticas detalhadas por período
+export function getDetailedStats(): {
+  hoje: {
+    total: number;
+    agendados: number;
+    em_atendimento: number;
+    concluidos: number;
+  };
+  esta_semana: {
+    total: number;
+    concluidos: number;
+  };
+  este_mes: {
+    total: number;
+    concluidos: number;
+  };
+} {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Uma semana atrás
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    
+    // Um mês atrás
+    const monthAgo = new Date();
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    const monthAgoStr = monthAgo.toISOString().split('T')[0];
+    
+    // Hoje
+    const hojeTotal = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ? AND status != ?',
+      [today, 'cancelado']
+    )?.count || 0;
+    
+    const hojeAgendados = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ? AND status = ?',
+      [today, 'agendado']
+    )?.count || 0;
+    
+    const hojeEmAtendimento = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ? AND status = ?',
+      [today, 'em_atendimento']
+    )?.count || 0;
+    
+    const hojeConcluidos = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ? AND status = ?',
+      [today, 'concluido']
+    )?.count || 0;
+    
+    // Esta semana
+    const semanaTotal = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date >= ? AND status != ?',
+      [weekAgoStr, 'cancelado']
+    )?.count || 0;
+    
+    const semanaConcluidos = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date >= ? AND status = ?',
+      [weekAgoStr, 'concluido']
+    )?.count || 0;
+    
+    // Este mês
+    const mesTotal = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date >= ? AND status != ?',
+      [monthAgoStr, 'cancelado']
+    )?.count || 0;
+    
+    const mesConcluidos = database.getFirstSync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM appointments WHERE scheduled_date >= ? AND status = ?',
+      [monthAgoStr, 'concluido']
+    )?.count || 0;
+    
+    return {
+      hoje: {
+        total: hojeTotal,
+        agendados: hojeAgendados,
+        em_atendimento: hojeEmAtendimento,
+        concluidos: hojeConcluidos
+      },
+      esta_semana: {
+        total: semanaTotal,
+        concluidos: semanaConcluidos
+      },
+      este_mes: {
+        total: mesTotal,
+        concluidos: mesConcluidos
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao obter estatísticas detalhadas:', error);
+    return {
+      hoje: { total: 0, agendados: 0, em_atendimento: 0, concluidos: 0 },
+      esta_semana: { total: 0, concluidos: 0 },
+      este_mes: { total: 0, concluidos: 0 }
+    };
+  }
+}
+
+
 
 // ✅ Próximo da fila
 export function getNextInQueue(date?: string): Appointment | null {

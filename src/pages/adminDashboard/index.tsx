@@ -22,7 +22,7 @@ import {
   demoteFromAdmin,
   deleteUser 
 } from '../../database/services/userServices';
-import { Appointment, getActiveAppointments, getAppointmentStats, SERVICE_TYPES, updateAppointmentStatus } from '../../database/services/servicesAppointments';
+import { Appointment, getActiveAppointments, getAppointmentsHistory, getAppointmentStats, getDetailedStats, getTodayAppointments, SERVICE_TYPES, updateAppointmentStatus } from '../../database/services/servicesAppointments';
 
 type AdminDashboardScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AdminDashboard'>;
 type AdminDashboardScreenRouteProp = RouteProp<RootStackParamList, 'AdminDashboard'>;
@@ -62,31 +62,59 @@ export default function AdminDashboard() {
   const [activeAppointments, setActiveAppointments] = useState<Appointment[]>([]);
   const [showAppointmentsModal, setShowAppointmentsModal] = useState<boolean>(false);
 
-  // Carregar estatísticas (modificado)
-  const loadStats = async (): Promise<void> => {
-    try {
-      // Carregar usuários
-      const allUsers = getAllUsers();
-      const roleCount = getUserCountByRole();
-      
-      setUserStats({
-        totalUsers: allUsers.length,
-        activeUsers: roleCount.users + roleCount.admins,
-        newUsersToday: getTodayRegistrations(allUsers)
-      });
 
-      // ✅ NOVO: Carregar estatísticas de agendamentos
-      const stats = getAppointmentStats();
-      setAppointmentStats(stats);
+  // ✅ NOVOS ESTADOS
+const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+const [appointmentsHistory, setAppointmentsHistory] = useState<Appointment[]>([]);
+const [detailedStats, setDetailedStats] = useState({
+  hoje: { total: 0, agendados: 0, em_atendimento: 0, concluidos: 0 },
+  esta_semana: { total: 0, concluidos: 0 },
+  este_mes: { total: 0, concluidos: 0 }
+});
 
-      // ✅ NOVO: Carregar agendamentos ativos
-      const active = getActiveAppointments();
-      setActiveAppointments(active);
 
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-    }
-  };
+// ✅ MODIFICAR loadStats
+const loadStats = async (): Promise<void> => {
+  try {
+    // Carregar usuários
+    const allUsers = getAllUsers();
+    const roleCount = getUserCountByRole();
+    
+    setUserStats({
+      totalUsers: allUsers.length,
+      activeUsers: roleCount.users + roleCount.admins,
+      newUsersToday: getTodayRegistrations(allUsers)
+    });
+
+    // ✅ CORRIGIDO: Carregar estatísticas corretas
+    const stats = getAppointmentStats();
+    setAppointmentStats(stats);
+
+    // ✅ NOVO: Carregar estatísticas detalhadas
+    const detailed = getDetailedStats();
+    setDetailedStats(detailed);
+
+    // ✅ MODIFICADO: Carregar apenas agendamentos de hoje ativos
+    const todayActive = getTodayAppointments();
+    setActiveAppointments(todayActive);
+
+  } catch (error) {
+    console.error('Erro ao carregar estatísticas:', error);
+  }
+};
+
+// ✅ NOVA FUNÇÃO: Mostrar histórico
+const handleShowHistory = () => {
+  try {
+    const history = getAppointmentsHistory(100); // Últimos 100
+    setAppointmentsHistory(history);
+    setShowHistoryModal(true);
+  } catch (error) {
+    Alert.alert('Erro', 'Não foi possível carregar o histórico');
+  }
+};
+
+  
 
   // ✅ NOVA FUNÇÃO: Mostrar relatório de agendamentos
   const handleShowAppointmentsReport = () => {
@@ -322,103 +350,139 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {/* Estatísticas em Cards */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Estatísticas do Sistema</Text>
-          
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, styles.statCardBlue]}>
-              <MaterialIcons name="people" size={32} color="#007bff" />
-              <Text style={styles.statValue}>{userStats.totalUsers}</Text>
-              <Text style={styles.statLabel}>Total Usuários</Text>
+         {/* ✅ ÚNICA seção de estatísticas (melhorada) */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📊 Estatísticas do Sistema</Text>
+            
+            {/* Estatísticas principais */}
+            <View style={styles.statsGrid}>
+              <View style={[styles.statCard, styles.statCardBlue]}>
+                <MaterialIcons name="today" size={32} color="#007bff" />
+                <Text style={styles.statValue}>{detailedStats?.hoje?.total || appointmentStats.hoje}</Text>
+                <Text style={styles.statLabel}>Agendamentos Hoje</Text>
+              </View>
+
+              <View style={[styles.statCard, styles.statCardYellow]}>
+                <MaterialIcons name="schedule" size={32} color="#ffc107" />
+                <Text style={styles.statValue}>{appointmentStats.agendados}</Text>
+                <Text style={styles.statLabel}>Aguardando</Text>
+              </View>
+
+              <View style={[styles.statCard, styles.statCardGreen]}>
+                <MaterialIcons name="check-circle" size={32} color="#28a745" />
+                <Text style={styles.statValue}>{appointmentStats.concluidos}</Text>
+                <Text style={styles.statLabel}>Concluídos</Text>
+              </View>
             </View>
 
-            <View style={[styles.statCard, styles.statCardGreen]}>
-              <MaterialIcons name="trending-up" size={32} color="#28a745" />
-              <Text style={styles.statValue}>{userStats.activeUsers}</Text>
-              <Text style={styles.statLabel}>Usuários Ativos</Text>
+            {/* ✅ Estatísticas de usuários */}
+            <View style={styles.statsGrid}>
+              <View style={[styles.statCard, styles.statCardBlue]}>
+                <MaterialIcons name="people" size={32} color="#007bff" />
+                <Text style={styles.statValue}>{userStats.totalUsers}</Text>
+                <Text style={styles.statLabel}>Total Usuários</Text>
+              </View>
+
+              <View style={[styles.statCard, styles.statCardOrange]}>
+                <MaterialIcons name="person-add" size={32} color="#ffc107" />
+                <Text style={styles.statValue}>{userStats.newUsersToday}</Text>
+                <Text style={styles.statLabel}>Novos Hoje</Text>
+              </View>
             </View>
 
-            <View style={[styles.statCard, styles.statCardOrange]}>
-              <MaterialIcons name="person-add" size={32} color="#ffc107" />
-              <Text style={styles.statValue}>{userStats.newUsersToday}</Text>
-              <Text style={styles.statLabel}>Novos Hoje</Text>
+            {/* ✅ Período (se você tiver detailedStats) */}
+            {detailedStats && (
+              <View style={styles.periodsStats}>
+                <View style={styles.periodItem}>
+                  <Text style={styles.periodLabel}>Esta Semana</Text>
+                  <Text style={styles.periodValue}>{detailedStats.esta_semana?.total || 0} total</Text>
+                  <Text style={styles.periodSub}>{detailedStats.esta_semana?.concluidos || 0} concluídos</Text>
+                </View>
+                <View style={styles.periodItem}>
+                  <Text style={styles.periodLabel}>Este Mês</Text>
+                  <Text style={styles.periodValue}>{detailedStats.este_mes?.total || 0} total</Text>
+                  <Text style={styles.periodSub}>{detailedStats.este_mes?.concluidos || 0} concluídos</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Menu de Gestão */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>👥 Gestão de Usuários</Text>
+            
+            <View style={styles.cardsGrid}>
+              {/* Card Usuários */}
+              <TouchableOpacity 
+                style={[styles.card, styles.cardUsers]}
+                onPress={loadUsers}
+                activeOpacity={0.7}
+              >
+                <View style={styles.cardIcon}>
+                  <MaterialIcons name="people" size={40} color="#007bff" />
+                </View>
+                <Text style={styles.cardTitle}>Usuários</Text>
+                <Text style={styles.cardDescription}>Gerenciar usuários do sistema</Text>
+                <View style={styles.cardArrow}>
+                  <MaterialIcons name="arrow-forward" size={20} color="#007bff" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Card Agendamentos */}
+              <TouchableOpacity 
+                style={[styles.card, styles.cardReports]}
+                onPress={handleShowAppointmentsReport}
+                activeOpacity={0.7}
+              >
+                <View style={styles.cardIcon}>
+                  <MaterialIcons name="ad-units" size={40} color="#28a745" />
+                </View>
+                <Text style={styles.cardTitle}>Agendamentos</Text>
+                <Text style={styles.cardDescription}>
+                  {activeAppointments.length} ativos
+                </Text>
+                <View style={styles.cardArrow}>
+                  <MaterialIcons name="arrow-forward" size={20} color="#28a745" />
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.cardsGrid}>
+              {/* Card Histórico */}
+              <TouchableOpacity 
+                style={[styles.card, styles.cardHistory]}
+                onPress={handleShowHistory}
+                activeOpacity={0.7}
+              >
+                <View style={styles.cardIcon}>
+                  <MaterialIcons name="history" size={40} color="#6f42c1" />
+                </View>
+                <Text style={styles.cardTitle}>Histórico</Text>
+                <Text style={styles.cardDescription}>
+                  Ver agendamentos concluídos
+                </Text>
+                <View style={styles.cardArrow}>
+                  <MaterialIcons name="arrow-forward" size={20} color="#6f42c1" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Card Sistema */}
+              <TouchableOpacity 
+                style={[styles.card, styles.cardSettings]}
+                onPress={() => Alert.alert('Em breve', 'Configurações do sistema')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.cardIcon}>
+                  <MaterialIcons name="settings" size={40} color="#ffc107" />
+                </View>
+                <Text style={styles.cardTitle}>Sistema</Text>
+                <Text style={styles.cardDescription}>Configurações gerais</Text>
+                <View style={styles.cardArrow}>
+                  <MaterialIcons name="arrow-forward" size={20} color="#ffc107" />
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-
-        {/* Menu de Gestão */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👥 Gestão de Usuários</Text>
-          
-          <View style={styles.cardsGrid}>
-            <TouchableOpacity 
-              style={[styles.card, styles.cardUsers]}
-              onPress={loadUsers}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="people" size={40} color="#007bff" />
-              </View>
-              <Text style={styles.cardTitle}>Usuários</Text>
-              <Text style={styles.cardDescription}>Gerenciar usuários do sistema</Text>
-              <View style={styles.cardArrow}>
-                <MaterialIcons name="arrow-forward" size={20} color="#007bff" />
-              </View>
-            </TouchableOpacity>
-
-             {/* ✅ MODIFICADO: Card de Relatórios agora mostra agendamentos */}
-            <TouchableOpacity 
-              style={[styles.card, styles.cardReports]}
-              onPress={handleShowAppointmentsReport}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="ad-units" size={40} color="#28a745" />
-              </View>
-              <Text style={styles.cardTitle}>Agendamentos</Text>
-              <Text style={styles.cardDescription}>
-                {activeAppointments.length} ativos
-              </Text>
-              <View style={styles.cardArrow}>
-                <MaterialIcons name="arrow-forward" size={20} color="#28a745" />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cardsGrid}>
-            <TouchableOpacity 
-              style={[styles.card, styles.cardSettings]}
-              onPress={() => Alert.alert('Em breve', 'Configurações do sistema')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="settings" size={40} color="#ffc107" />
-              </View>
-              <Text style={styles.cardTitle}>Sistema</Text>
-              <Text style={styles.cardDescription}>Configurações gerais</Text>
-              <View style={styles.cardArrow}>
-                <MaterialIcons name="arrow-forward" size={20} color="#ffc107" />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.card, styles.cardSecurity]}
-              onPress={() => Alert.alert('Em breve', 'Logs de segurança')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="security" size={40} color="#dc3545" />
-              </View>
-              <Text style={styles.cardTitle}>Segurança</Text>
-              <Text style={styles.cardDescription}>Logs e auditoria</Text>
-              <View style={styles.cardArrow}>
-                <MaterialIcons name="arrow-forward" size={20} color="#dc3545" />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Ações Rápidas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚡ Ações Administrativas</Text>
@@ -563,7 +627,7 @@ export default function AdminDashboard() {
               onPress={() => setShowAppointmentsModal(false)}
               style={styles.modalCloseButton}
             >
-              <MaterialIcons name="close" size={24} color="#666" />
+              <MaterialIcons name="close" size={24}/>
             </TouchableOpacity>
           </View>
 
@@ -586,7 +650,7 @@ export default function AdminDashboard() {
           <ScrollView style={styles.modalContent}>
             {activeAppointments.length === 0 ? (
               <View style={styles.emptyState}>
-                <MaterialIcons name="ad-units" size={64} color="#ccc" />
+                <MaterialIcons name="ad-units" size={64}/>
                 <Text style={styles.emptyText}>Nenhum agendamento ativo</Text>
               </View>
             ) : (
@@ -637,7 +701,7 @@ export default function AdminDashboard() {
                           style={styles.actionButton}
                           onPress={() => handleUpdateStatus(appointment.id, 'concluido')}
                         >
-                          <MaterialIcons name="check" size={20} color="#28a745" />
+                          <MaterialIcons name="check" size={20}/>
                         </TouchableOpacity>
                       )}
                     </View>

@@ -2,9 +2,10 @@ import database from './index';
 import { createUser } from './services/userServices';
 
 // ✅ Adicionar dados de exemplo para testes
+// ✅ SOLUÇÃO: Desabilitar criação automática
 export function seedDatabase() {
   try {
-    console.log('🌱 Iniciando seed do banco de dados...');
+    console.log('🌱 Seed do banco de dados chamado...');
 
     // Verificar se já tem usuários
     const userCount = database.getFirstSync<{ count: number }>(
@@ -17,33 +18,12 @@ export function seedDatabase() {
       return false;
     }
 
-    // Adicionar usuários de teste
-    const users = [
-      { name: 'Admin Sistema', email: 'admin@sistema.com', password: 'Admin123' },
-      { name: 'João Silva', email: 'joao@teste.com', password: 'Joao123' },
-      { name: 'Maria Santos', email: 'maria@teste.com', password: 'Maria123' },
-      { name: 'Pedro Costa', email: 'pedro@teste.com', password: 'Pedro123' },
-      { name: 'Ana Oliveira', email: 'ana@teste.com', password: 'Ana123' },
-    ];
-
-    console.log(`📝 Criando ${users.length} usuários de teste...`);
-
-    users.forEach(user => {
-      try {
-        const userId = createUser(user.name, user.email, user.password);
-        console.log(`✅ ${user.name} criado com ID: ${userId}`);
-      } catch (error: any) {
-        console.error(`❌ Erro ao criar ${user.name}:`, error.message);
-      }
-    });
-
-    console.log('\n✅ Seed concluído com sucesso!');
-    console.log('\n📧 Credenciais de teste:');
-    users.forEach(user => {
-      console.log(`   - ${user.email} / ${user.password}`);
-    });
-
-    return true;
+    // ✅ NOVO: Não criar usuários automaticamente
+    console.log('💡 Banco vazio detectado.');
+    console.log('   Para criar usuários de teste, execute: seedTestUsers()');
+    console.log('   Para criar apenas admin, execute: createAdminUser()');
+    
+    return false; // ← Retorna false para não criar nada
   } catch (error: any) {
     console.error('❌ Erro ao executar seed:', error);
     throw error;

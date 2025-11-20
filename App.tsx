@@ -26,43 +26,37 @@ export default function App() {
 
 
   async function initializeApp() {
-  try {
-    console.log('🚀 Iniciando aplicação...');
-    
-    // Inicializar banco de dados
-    const success = initDatabase();
-    
-    if (success) {
-      console.log('✅ Banco de dados pronto!');
+    try {
+      console.log('🚀 Iniciando aplicação...');
       
-      // ✅ ADICIONADO: Debug e configuração de admin
-      console.log('🔍 Verificando usuários...');
-      debugAllUsers();
+      // Inicializar banco de dados
+      const success = initDatabase();
       
-      // ✅ Garantir que existe um admin
-      const adminCreated = forceCreateAdmin();
-      if (adminCreated) {
-        console.log('✅ Admin padrão garantido: admin@sistema.com / admin123');
+      if (success) {
+        console.log('✅ Banco de dados pronto!');
+        
+        // ✅ REMOVIDO: Criação automática de admin
+        // const adminCreated = forceCreateAdmin(); // ← REMOVER APENAS ESTA LINHA
+        
+        // ✅ MANTIDO: Lógica de promoção (se o usuário existir)
+        console.log('🔍 Verificando promoções necessárias...');
+        const promoted = makeUserAdmin('adm01@gmail.com');
+        if (promoted) {
+          console.log('✅ adm01@gmail.com promovido para admin!');
+        } else {
+          console.log('ℹ️ Usuário adm01@gmail.com não encontrado para promoção');
+        }
+        
+        // ✅ Debug e estatísticas
+        console.log('👑 Verificando status final dos usuários...');
+        debugAllUsers();
+        dbUtils.stats();
       }
       
-      // ✅ ADICIONAL: Promover usuário específico se quiser
-      const promoted = makeUserAdmin('adm01@gmail.com');
-      if (promoted) {
-        console.log('✅ adm01@gmail.com promovido para admin!');
-      }
-      
-      // ✅ Debug final para confirmar admins
-      console.log('👑 Verificando admins finais...');
-      debugAllUsers();
-      
-      // Mostrar estatísticas
-      dbUtils.stats();
-    }
-    
-    // Simular carregamento
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+      // Simular carregamento
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
     
   } catch (error: any) {
     console.error('❌ Erro ao inicializar app:', error);

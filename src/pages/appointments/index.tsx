@@ -47,18 +47,41 @@ export default function Appointments() {
     loadData();
   }, []);
 
-  const loadData = () => {
-    try {
-      const appointments = getUserAppointments(user.id);
-      setMyAppointments(appointments);
 
-      const today = new Date().toISOString().split('T')[0];
-      const queue = getAppointmentsByDate(today);
-      setTodayQueue(queue);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+
+ // ✅ MODIFICAR: loadData com filtro baseado no role
+const loadData = () => {
+  try {
+    const appointments = getUserAppointments(user.id);
+    setMyAppointments(appointments);
+
+    const today = new Date().toISOString().split('T')[0];
+    const allTodayQueue = getAppointmentsByDate(today); // ← Buscar todos
+    
+    // ✅ NOVO: Filtrar baseado no role do usuário
+    let filteredQueue;
+    
+    if (user.role === 'admin') {
+      // 👑 ADMIN: Ver todos os agendamentos (incluindo concluídos)
+      console.log('👑 Usuário admin - mostrando todos os agendamentos');
+      filteredQueue = allTodayQueue; // Mostra tudo
+    } else {
+      // 👤 USUÁRIO: Ver apenas fila ativa (sem concluídos)
+      console.log('👤 Usuário comum - mostrando apenas fila ativa');
+      filteredQueue = allTodayQueue.filter(
+        appointment => appointment.status === 'agendado' || appointment.status === 'em_atendimento'
+      );
     }
-  };
+    
+    console.log(`📋 Fila filtrada: ${filteredQueue.length} de ${allTodayQueue.length} agendamentos`);
+    setTodayQueue(filteredQueue);
+    
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+  }
+};
+
+
 
   // Criar agendamento
   const handleCreateAppointment = () => {
@@ -133,9 +156,9 @@ export default function Appointments() {
   // Obter cor do status
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'agendado': return '#007bff';
-      case 'em_atendimento': return '#ffc107';
-      case 'concluido': return '#28a745';
+      case 'agendado': return '#065e0e';
+      case 'em_atendimento': return '#206cd6';
+      case 'concluido': return '#c3e119';
       case 'cancelado': return '#dc3545';
       default: return '#6c757d';
     }

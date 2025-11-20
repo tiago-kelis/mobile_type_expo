@@ -55,7 +55,7 @@ export const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007bff',
+    backgroundColor: '#7d8c9dff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -86,7 +86,7 @@ export const styles = StyleSheet.create({
 
   queueTime: {
     fontSize: 14,
-    color: '#007bff',
+    color: '#11ae26ff',
     fontWeight: '500',
   },
 
@@ -98,7 +98,7 @@ export const styles = StyleSheet.create({
   },
 
   statusText: {
-    color: '#fff',
+    color: '#7e0d0dff',
     fontSize: 12,
     fontWeight: 'bold',
   },
