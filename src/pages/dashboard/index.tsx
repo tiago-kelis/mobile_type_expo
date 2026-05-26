@@ -1,5 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,18 +14,16 @@ import { RootStackParamList } from '../../routers/types';
 import { styles } from './styles';
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
-type DashboardScreenRouteProp = RouteProp<RootStackParamList, 'Dashboard'>;
+type DashboardScreenRouteProp     = RouteProp<RootStackParamList, 'Dashboard'>;
 
 export default function Dashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
-  const route = useRoute<DashboardScreenRouteProp>();
-  
-  const { user } = route.params;
+  const route      = useRoute<DashboardScreenRouteProp>();
+  const { user }   = route.params;
 
-  // ✅ Verificação de segurança - redirecionar admin
+  // ── redirecionar admin ─────────────────────────────────────────────────────
   useEffect(() => {
     if (user.role === 'admin') {
-      console.log('🔄 Admin redirecionado para AdminDashboard');
       navigation.reset({
         index: 0,
         routes: [{ name: 'AdminDashboard', params: { user } }],
@@ -28,261 +33,284 @@ export default function Dashboard() {
 
   if (user.role === 'admin') {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Redirecionando para área administrativa...</Text>
+      <View style={styles.redirectScreen}>
+        <Text style={styles.redirectText}>Redirecionando...</Text>
       </View>
     );
   }
 
-  // 🏠 Navegar para Home
-  function handleGoToHome() {
-    navigation.navigate('Home', { user });
-  }
+  // ── helpers ────────────────────────────────────────────────────────────────
 
-  // 👤 Navegar para Perfil/User
-  function handleGoToProfile() {
-    navigation.navigate('User', { user });
-  }
 
-  // ✅ 📅 NOVA FUNÇÃO: Navegar para Agendamentos
-  function handleGoToAppointments() {
-    navigation.navigate('Appointments', { user });
-  }
+  // src/pages/adminDashboard/index.tsx
+// ── Adicionar helper no topo do componente ─────────────────────────────────
 
-  // 🚪 Fazer Logout
-  function handleLogout() {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel'
-        },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: () => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          }
-        }
-      ]
-    );
-  }
+  const getLocalDateString = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
-  // Formatar data
-  function formatDate(dateString?: string): string {
-    if (!dateString) return 'Hoje';
-    
+
+  // ── Helper local no topo do arquivo ───────────────────────────────────────
+function getLocalDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// ── Substituir todas as ocorrências de: ───────────────────────────────────
+// const today = new Date().toISOString().split('T')[0];
+// por:
+// const today = getLocalDate();
+
+
+  const getGreeting = (): string => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Bom dia';
+    if (h < 18) return 'Boa tarde';
+    return 'Boa noite';
+  };
+
+  // ✅ CORRIGIDO: trata string ISO com ou sem horário
+  const formatMemberDate = (dateString?: string): string => {
+    if (!dateString) return 'data desconhecida';
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR', {
+      const normalized = dateString.includes('T')
+        ? dateString
+        : dateString + 'T00:00:00';
+      return new Date(normalized).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'long',
-        year: 'numeric'
+        year: 'numeric',
       });
     } catch {
-      return 'Data inválida';
+      return 'data inválida';
     }
-  }
+  };
 
-  // Obter saudação baseada no horário
-  function getGreeting(): string {
-    const hour = new Date().getHours();
-    
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  }
+  // ── navegação ──────────────────────────────────────────────────────────────
+
+  const goTo = (screen: keyof RootStackParamList) =>
+    navigation.navigate(screen as any, { user });
+
+  const handleLogout = () => {
+    Alert.alert('Sair', 'Tem certeza que deseja sair?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: () =>
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] }),
+      },
+    ]);
+  };
+
+  // ── render ─────────────────────────────────────────────────────────────────
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header com informações do usuário */}
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greetingText}>{getGreeting()},</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{getGreeting()},</Text>
             <Text style={styles.userName}>{user.name}</Text>
             <Text style={styles.userEmail}>{user.email}</Text>
             <View style={styles.userBadge}>
-              <MaterialIcons name="person" size={14} color="#007bff" />
+              <MaterialIcons name="person" size={12} color="#3b82f6" />
               <Text style={styles.userBadgeText}>USUÁRIO</Text>
             </View>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.avatarContainer}
-            onPress={handleGoToProfile}
+
+          <TouchableOpacity
+            style={styles.avatarCircle}
+            onPress={() => goTo('User')}
+            activeOpacity={0.8}
           >
-            <MaterialIcons name="account-circle" size={70} color="#007bff" />
+            <MaterialIcons name="account-circle" size={52} color="#3b82f6" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.infoBar}>
-          <View style={styles.infoItem}>
-            <MaterialIcons name="badge" size={16} color="#666" />
-            <Text style={styles.infoText}>ID: #{user.id}</Text>
+        <View style={styles.headerInfoBar}>
+          <View style={styles.headerInfoItem}>
+            <MaterialIcons name="badge" size={14} color="#64748b" />
+            <Text style={styles.headerInfoText}>ID #{user.id}</Text>
           </View>
-          <View style={styles.infoItem}>
-            <MaterialIcons name="calendar-today" size={16} color="#666" />
-            <Text style={styles.infoText}>Membro desde {formatDate(user.created_at)}</Text>
+          <View style={styles.headerInfoItem}>
+            <MaterialIcons name="calendar-today" size={14} color="#64748b" />
+            <Text style={styles.headerInfoText}>
+              Membro desde {formatMemberDate(user.created_at)}
+            </Text>
           </View>
         </View>
-      </View>      
+      </View>
 
-      {/* ✅ MODIFICADO: Cards de Navegação Principal - Grid 2x2 com 3 cards */}
+      {/* ── Menu Principal ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📱 Menu Principal</Text>
-        
-        <View style={styles.cardsGrid}>
-          {/* Card Home - Posição 1 (linha 1, coluna 1) */}
-          <TouchableOpacity 
-            style={[styles.card, styles.cardHome]}
-            onPress={handleGoToHome}
-            activeOpacity={0.7}
+        <Text style={styles.sectionTitle}>Menu Principal</Text>
+
+        <View style={styles.menuGrid}>
+          {/* Home */}
+          <TouchableOpacity
+            style={styles.menuCard}
+            onPress={() => goTo('Home')}
+            activeOpacity={0.75}
           >
-            <View>
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="home" size={40} color="#00ffd0ff" />
-              </View>
-              <Text style={styles.cardTitle}>Home</Text>
-              <Text style={styles.cardDescription}>
-                Ver suas informações completas
-              </Text>
+            <View style={[styles.menuIconBox, { backgroundColor: '#10b98115' }]}>
+              <MaterialIcons name="home" size={26} color="#10b981" />
             </View>
-            <View style={styles.cardArrow}>
-              <MaterialIcons name="arrow-forward" size={20} color="#00ffd0ff" />
-            </View>
+            <Text style={styles.menuCardTitle}>Home</Text>
+            <Text style={styles.menuCardSub}>Ver informações completas</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#475569" style={styles.menuArrow} />
           </TouchableOpacity>
 
-          {/* Card Perfil - Posição 2 (linha 1, coluna 2) */}
-          <TouchableOpacity 
-            style={[styles.card, styles.cardProfile]}
-            onPress={handleGoToProfile}
-            activeOpacity={0.7}
+          {/* Perfil */}
+          <TouchableOpacity
+            style={styles.menuCard}
+            onPress={() => goTo('User')}
+            activeOpacity={0.75}
           >
-            <View>
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="person" size={40} color="#00ffd0ff" />
-              </View>
-              <Text style={styles.cardTitle}>Perfil</Text>
-              <Text style={styles.cardDescription}>
-                Editar dados cadastrais
-              </Text>
+            <View style={[styles.menuIconBox, { backgroundColor: '#3b82f615' }]}>
+              <MaterialIcons name="person" size={26} color="#3b82f6" />
             </View>
-            <View style={styles.cardArrow}>
-              <MaterialIcons name="arrow-forward" size={20} color="#00ffd0ff" />
-            </View>
+            <Text style={styles.menuCardTitle}>Perfil</Text>
+            <Text style={styles.menuCardSub}>Editar dados cadastrais</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#475569" style={styles.menuArrow} />
           </TouchableOpacity>
 
-          {/* Card Agendamentos - Posição 3 (linha 2, coluna 1) */}
-          <TouchableOpacity 
-            style={[styles.card, styles.cardAppointments]}
-            onPress={handleGoToAppointments}
-            activeOpacity={0.7}
+          {/* Agendamentos */}
+          <TouchableOpacity
+            style={styles.menuCard}
+            onPress={() => goTo('Appointments')}
+            activeOpacity={0.75}
           >
-            <View>
-              <View style={styles.cardIcon}>
-                <MaterialIcons name="event" size={40} color="#ff6b35" />
-              </View>
-              <Text style={styles.cardTitle}>Agendamentos</Text>
-              <Text style={styles.cardDescription}>
-                Marcar horários e ver fila
-              </Text>
+            <View style={[styles.menuIconBox, { backgroundColor: '#f59e0b15' }]}>
+              <MaterialIcons name="event" size={26} color="#f59e0b" />
             </View>
-            <View style={styles.cardArrow}>
-              <MaterialIcons name="arrow-forward" size={20} color="#ff6b35" />
+            <Text style={styles.menuCardTitle}>Agendamentos</Text>
+            <Text style={styles.menuCardSub}>Marcar horários e fila</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#475569" style={styles.menuArrow} />
+          </TouchableOpacity>
+
+          {/* Em breve */}
+          <TouchableOpacity
+            style={[styles.menuCard, styles.menuCardDisabled]}
+            onPress={() => Alert.alert('Em breve', 'Funcionalidade em desenvolvimento')}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.menuIconBox, { backgroundColor: '#8b5cf615' }]}>
+              <MaterialIcons name="star-outline" size={26} color="#8b5cf6" />
             </View>
+            <Text style={styles.menuCardTitle}>Novidades</Text>
+            <Text style={styles.menuCardSub}>Em breve</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#475569" style={styles.menuArrow} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* ✅ MODIFICADO: Ações Rápidas - Agendamentos adicionado */}
+      {/* ── Ações Rápidas ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚡ Ações Rápidas</Text>
-        
-        {/* ✅ NOVA AÇÃO: Agendamentos */}
-        <TouchableOpacity 
-          style={styles.quickActionButton}
-          onPress={handleGoToAppointments}
+        <Text style={styles.sectionTitle}>Ações Rápidas</Text>
+
+        <TouchableOpacity
+          style={styles.quickAction}
+          onPress={() => goTo('Appointments')}
+          activeOpacity={0.8}
         >
-          <MaterialIcons name="event" size={24} color="#ff6b35" />
+          <View style={[styles.quickActionIcon, { backgroundColor: '#f59e0b15' }]}>
+            <MaterialIcons name="event-note" size={20} color="#f59e0b" />
+          </View>
           <Text style={styles.quickActionText}>Agendar Horário</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+          <MaterialIcons name="chevron-right" size={20} color="#475569" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.quickActionButton}
-          onPress={handleGoToProfile}
+        <TouchableOpacity
+          style={styles.quickAction}
+          onPress={() => goTo('User')}
+          activeOpacity={0.8}
         >
-          <MaterialIcons name="edit" size={24} color="#007bff" />
+          <View style={[styles.quickActionIcon, { backgroundColor: '#3b82f615' }]}>
+            <MaterialIcons name="edit" size={20} color="#3b82f6" />
+          </View>
           <Text style={styles.quickActionText}>Editar Perfil</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+          <MaterialIcons name="chevron-right" size={20} color="#475569" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.quickActionButton}
+        <TouchableOpacity
+          style={styles.quickAction}
           onPress={() => Alert.alert('Em breve', 'Funcionalidade em desenvolvimento')}
+          activeOpacity={0.8}
         >
-          <MaterialIcons name="settings" size={24} color="#6c757d" />
+          <View style={[styles.quickActionIcon, { backgroundColor: '#64748b15' }]}>
+            <MaterialIcons name="settings" size={20} color="#64748b" />
+          </View>
           <Text style={styles.quickActionText}>Configurações</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+          <MaterialIcons name="chevron-right" size={20} color="#475569" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.quickActionButton}
+        <TouchableOpacity
+          style={styles.quickAction}
           onPress={() => Alert.alert('Em breve', 'Funcionalidade em desenvolvimento')}
+          activeOpacity={0.8}
         >
-          <MaterialIcons name="help-outline" size={24} color="#ffc107" />
+          <View style={[styles.quickActionIcon, { backgroundColor: '#f59e0b15' }]}>
+            <MaterialIcons name="help-outline" size={20} color="#f59e0b" />
+          </View>
           <Text style={styles.quickActionText}>Ajuda</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+          <MaterialIcons name="chevron-right" size={20} color="#475569" />
         </TouchableOpacity>
       </View>
 
-      {/* Estatísticas */}
+      {/* ── Status da Conta ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 Estatísticas</Text>
-        
-        <View style={styles.statsContainer}>
+        <Text style={styles.sectionTitle}>Status da Conta</Text>
+
+        <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <MaterialIcons name="access-time" size={32} color="#28a745" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10b98115' }]}>
+              <MaterialIcons name="wifi" size={22} color="#10b981" />
+            </View>
             <Text style={styles.statValue}>Online</Text>
             <Text style={styles.statLabel}>Status</Text>
           </View>
 
           <View style={styles.statCard}>
-            <MaterialIcons name="verified-user" size={32} color="#007bff" />
+            <View style={[styles.statIconBox, { backgroundColor: '#3b82f615' }]}>
+              <MaterialIcons name="verified-user" size={22} color="#3b82f6" />
+            </View>
             <Text style={styles.statValue}>Ativo</Text>
             <Text style={styles.statLabel}>Conta</Text>
           </View>
 
           <View style={styles.statCard}>
-            <MaterialIcons name="security" size={32} color="#ffc107" />
+            <View style={[styles.statIconBox, { backgroundColor: '#f59e0b15' }]}>
+              <MaterialIcons name="security" size={22} color="#f59e0b" />
+            </View>
             <Text style={styles.statValue}>Alta</Text>
             <Text style={styles.statLabel}>Segurança</Text>
           </View>
         </View>
       </View>
 
-      {/* Botão de Logout */}
-      <TouchableOpacity 
+      {/* ── Logout ── */}
+      <TouchableOpacity
         style={styles.logoutButton}
         onPress={handleLogout}
         activeOpacity={0.8}
       >
-        <MaterialIcons name="exit-to-app" size={24} color="#dc3545" />
-        <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+        <MaterialIcons name="logout" size={20} color="#ef4444" />
+        <Text style={styles.logoutText}>Sair da Conta</Text>
       </TouchableOpacity>
 
-      {/* Rodapé */}
-      <View style={styles.footer}>       
-        <Text style={styles.footerVersion}>
-          Versão 1.0.0
-        </Text>
-      </View>
+      <Text style={styles.footerText}>Versão 1.0.0</Text>
     </ScrollView>
   );
 }

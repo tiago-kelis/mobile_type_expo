@@ -1,105 +1,196 @@
-import {StyleSheet} from "react-native"
+import { StyleSheet, Platform } from 'react-native';
+
+// ── Tokens (mesmo sistema dos outros arquivos) ────────────────────────────────
+const C = {
+  bg:      '#0f172a',
+  surface: '#1e293b',
+  border:  '#334155',
+
+  textPrimary:   '#f1f5f9',
+  textSecondary: '#94a3b8',
+  textMuted:     '#64748b',
+
+  blue:  '#3b82f6',
+  red:   '#ef4444',
+  green: '#10b981',
+};
+
+const CARD_RADIUS = 16;
 
 export const styles = StyleSheet.create({
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  keyboardView: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
   container: {
-    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: 28,
+    gap: 8,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: C.blue + '15',
+    borderWidth: 2,
+    borderColor: C.blue + '40',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+    marginBottom: 4,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 26,
+    fontWeight: '800',
+    color: C.textPrimary,
+    letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
+    fontSize: 14,
+    color: C.textMuted,
+    fontWeight: '500',
   },
-  inputContainer: {
+
+  // ── Card ──────────────────────────────────────────────────────────────────
+  card: {
     width: '100%',
-    marginBottom: 20,
+    maxWidth: 420,
+    backgroundColor: C.surface,
+    borderRadius: CARD_RADIUS,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginBottom: 16,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
+
+  // ── Input Group ───────────────────────────────────────────────────────────
+  inputGroup: {
+    marginBottom: 18,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: 8,
-    color: '#333',
   },
-  inputWrapper: {
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    borderWidth: 2,
-    borderColor: '#ddd',
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 14,
+    height: 50,
   },
-  inputError: {
-    borderColor: '#dc3545',
+  // ✅ Borda vermelha no erro — sem sobreposição de cor de fundo
+  inputRowError: {
+    borderColor: C.red,
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 10,
+    flexShrink: 0,
   },
   input: {
     flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: C.textPrimary,
+    height: '100%',
+  },
+  eyeBtn: {
+    padding: 4,
+    marginLeft: 8,
+  },
+
+  // ── Feedback ──────────────────────────────────────────────────────────────
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 5,
   },
   errorText: {
-    color: '#dc3545',
-    fontSize: 14,
-    marginTop: 5,
-    marginLeft: 5,
+    fontSize: 12,
+    color: C.red,
+    fontWeight: '500',
+    flex: 1,
   },
   hintText: {
-    color: '#6c757d',
     fontSize: 12,
-    marginTop: 5,
-    marginLeft: 5,
+    color: C.textMuted,
+    marginTop: 6,
+    lineHeight: 16,
   },
-  button: {
+
+  // ── Info Box ──────────────────────────────────────────────────────────────
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.blue + '12',
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: C.blue,
+    gap: 10,
+    marginTop: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    color: C.textSecondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  // ── Botões ────────────────────────────────────────────────────────────────
+  primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    marginTop: 10,
+    backgroundColor: C.blue,
+    borderRadius: 12,
+    height: 52,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    maxWidth: 420,
+    marginBottom: 12,
+    gap: 8,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  backButton: {
-    backgroundColor: '#6c757d',
-  },
-  buttonText: {
+  primaryBtnText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: '700',
   },
-  infoContainer: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#e7f3ff',
-    borderRadius: 8,
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    height: 52,
     width: '100%',
+    maxWidth: 420,
+    borderWidth: 1,
+    borderColor: C.border,
+    gap: 8,
   },
-  infoText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+  secondaryBtnText: {
+    color: C.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

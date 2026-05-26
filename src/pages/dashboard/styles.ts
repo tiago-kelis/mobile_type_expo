@@ -1,272 +1,278 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
-// ✅ NOVO: Obter dimensões da tela
-const { width: screenWidth } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+
+// ── Tokens (mesmo sistema dos outros arquivos) ────────────────────────────────
+const C = {
+  bg:        '#0f172a',
+  surface:   '#1e293b',
+  border:    '#334155',
+
+  textPrimary:   '#f1f5f9',
+  textSecondary: '#94a3b8',
+  textMuted:     '#64748b',
+
+  blue:   '#3b82f6',
+  green:  '#10b981',
+  yellow: '#f59e0b',
+  red:    '#ef4444',
+  purple: '#8b5cf6',
+};
+
+const CARD_RADIUS = 16;
+const SECTION_GAP = 28;
+
+// ✅ Largura do card do menu: 2 por linha com gap de 12
+const MENU_CARD_WIDTH = (width - 40 - 12) / 2;
 
 export const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#192542ff',
-    paddingBottom: 30,
+
+  // ── Redirect ──────────────────────────────────────────────────────────────
+  redirectScreen: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: C.bg,
+  },
+  redirectText: {
+    fontSize: 16,
+    color: C.textSecondary,
   },
 
-  // ========== HEADER ==========
-  header: {
-    backgroundColor: '#03112bff',
-    paddingTop: 50,
+  // ── Layout ────────────────────────────────────────────────────────────────
+  screen: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  container: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    shadowColor: '#76ca16ff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingBottom: 60,
+  },
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  header: {
+    backgroundColor: C.surface,
+    borderRadius: CARD_RADIUS,
+    padding: 20,
+    marginTop: Platform.OS === 'ios' ? 56 : 44,
+    marginBottom: SECTION_GAP,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  greetingText: {
-    fontSize: 16,
-    color: '#a09c9cff',
-    marginBottom: 5,
+  greeting: {
+    fontSize: 14,
+    color: C.textSecondary,
+    marginBottom: 2,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0b89d8ff',
-    marginBottom: 5,
+    fontSize: 22,
+    fontWeight: '700',
+    color: C.textPrimary,
+    marginBottom: 3,
   },
   userEmail: {
-    fontSize: 14,
-    color: '#3a3f5dff',
-  },
-  avatarContainer: {
-    backgroundColor: '#1e3a45ff',
-    borderRadius: 35,
-    padding: 5,
-  },
-  infoBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#387157ff',
-  },
-
-  // ========== SECTIONS ==========
-  section: {
-    paddingHorizontal: 15, // ✅ REDUZIDO: Mais espaço para os cards
-    marginTop: 15,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4e5684ff',
-    marginBottom: 15,
-  },
-
-  // ========== CARDS GRID RESPONSIVO ==========
-  cardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10, // ✅ REDUZIDO: Menos gap para mais espaço
-    alignItems: 'stretch',
-  },
-  
-  card: {
-    backgroundColor: '#03151cff',
-    borderRadius: 15,
-    padding: 12,
-    // ✅ NOVO: Largura responsiva
-    width: screenWidth < 350 
-      ? screenWidth - 50  // Tela pequena: quase toda largura
-      : screenWidth < 500 
-        ? (screenWidth - 50) * 0.48  // Tela média: 48% cada (2 por linha)
-        : (screenWidth - 60) * 0.31, // Tela grande: 31% cada (3 por linha)
-    minHeight: 140, // ✅ NOVO: Altura mínima
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    position: 'relative',
-    justifyContent: 'space-between',
-    marginBottom: 10, // ✅ NOVO: Espaço entre linhas
-  },
-
-  cardHome: {
-    borderLeftWidth: 4, // ✅ REDUZIDO
-    borderLeftColor: '#00ffd0ff',
-    borderWidth: 0.2,
-    borderColor: "#1ebe3cff"
-  },
-  cardProfile: {
-    borderLeftWidth: 4, // ✅ REDUZIDO
-    borderLeftColor: '#00ffd0ff',
-    borderWidth: 0.2,
-    borderColor: "#1ebe3cff"
-  },
-  cardAppointments: {
-    borderLeftWidth: 4, // ✅ REDUZIDO
-    borderLeftColor: '#ff6b35',
-    borderWidth: 0.2,
-    borderColor: "#ff6b35"
-  },
-  
-  cardIcon: {
-    width: 45, // ✅ AUMENTADO
-    height: 45, // ✅ AUMENTADO
-    backgroundColor: '#3641a2ff',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontSize: 13,
+    color: C.textMuted,
     marginBottom: 10,
   },
-  
-  cardTitle: {
-    fontSize: screenWidth < 350 ? 14 : 16, // ✅ NOVO: Fonte responsiva
-    fontWeight: 'bold',
-    color: '#1881ddff',
-    marginBottom: 6,
-  },
-  
-  cardDescription: {
-    fontSize: screenWidth < 350 ? 10 : 12, // ✅ NOVO: Fonte responsiva
-    color: '#2f6f44ff',
-    lineHeight: screenWidth < 350 ? 14 : 16, // ✅ NOVO: Line-height responsivo
-    flex: 1, // ✅ NOVO: Ocupa espaço restante
-  },
-  
-  cardArrow: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-  },
-
-  // ========== QUICK ACTIONS ==========
-  quickActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#134055ff',
-    padding: 12, // ✅ AUMENTADO
-    borderRadius: 12,
-    marginBottom: 12, // ✅ AUMENTADO
-    shadowColor: '#d6cdcdff',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#11b8e7ff',
-    marginLeft: 15,
-    fontWeight: '500',
-  },
-
-  // ========== STATS RESPONSIVO ==========
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8, // ✅ REDUZIDO
-  },
-  
-  statCard: {
-    flex: 1,
-    backgroundColor: '#081657ff',
-    borderRadius: 12,
-    padding: 12, // ✅ AUMENTADO
-    alignItems: 'center',
-    shadowColor: '#ede2e2ff',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    minHeight: 90, // ✅ NOVO: Altura mínima
-  },
-  
-  statValue: {
-    fontSize: 14, // ✅ AUMENTADO
-    fontWeight: 'bold',
-    color: '#bdadadff',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 11, // ✅ REDUZIDO
-    color: '#666',
-    marginTop: 5,
-    textAlign: 'center', // ✅ NOVO: Centralizado
-  },
-
-  // ========== LOGOUT RESPONSIVO ==========
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',    
-    backgroundColor: '#062a47ff',
-    marginHorizontal: screenWidth < 400 ? 50 : 90, // ✅ NOVO: Margem responsiva
-    marginTop: 20, // ✅ AUMENTADO
-    padding: 12, // ✅ AUMENTADO
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#dc3545',
-  },
-  logoutButtonText: {  
-    fontWeight: 'bold',
-    color: '#dc3545',
-    marginLeft: 8, // ✅ AUMENTADO
-    fontSize: 16,
-  },
-
-  // ========== FOOTER ==========
-  footer: {
-    alignItems: 'center',
-    marginTop: 15, // ✅ AUMENTADO
-    paddingHorizontal: 10,
-  },
-  footerText: {
-    fontSize: 13,
-    color: '#3b9b52ff',
-  },
-  footerVersion: {
-    fontSize: 12,
-    color: '#444242ff',
-  },
-
-  // ========== USER BADGE ==========
   userBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: "center",
-    backgroundColor: '#007bff',
-    paddingHorizontal: 6, // ✅ AUMENTADO
-    paddingVertical: 3, // ✅ AUMENTADO
-    borderRadius: 12,
-    marginTop: 6, // ✅ AUMENTADO
-    alignSelf: 'flex-start', // ✅ NOVO: Alinha à esquerda
+    backgroundColor: C.blue + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: C.blue + '40',
+    gap: 5,
+  },
+  userBadgeText: {
+    color: C.blue,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: C.blue + '15',
+    borderWidth: 2,
+    borderColor: C.blue + '40',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 16,
+    flexShrink: 0,
+  },
+  headerInfoBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    gap: 8,
+  },
+  headerInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  headerInfoText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: '500',
   },
 
-  userBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginLeft: 4, // ✅ CORRIGIDO: Era -8, agora positivo
-    letterSpacing: 0.5,
+  // ── Seção ─────────────────────────────────────────────────────────────────
+  section: {
+    marginBottom: SECTION_GAP,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 14,
+  },
+
+  // ── Menu Grid ─────────────────────────────────────────────────────────────
+  menuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  menuCard: {
+    width: MENU_CARD_WIDTH,
+    backgroundColor: C.surface,
+    borderRadius: CARD_RADIUS,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: C.border,
+    position: 'relative',
+    minHeight: 140,
+  },
+  menuCardDisabled: {
+    opacity: 0.6,
+  },
+  menuIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  menuCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: C.textPrimary,
+    marginBottom: 4,
+  },
+  menuCardSub: {
+    fontSize: 12,
+    color: C.textSecondary,
+    lineHeight: 16,
+    paddingRight: 20,
+  },
+  menuArrow: {
+    position: 'absolute',
+    bottom: 14,
+    right: 14,
+  },
+
+  // ── Ações Rápidas ─────────────────────────────────────────────────────────
+  quickAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  quickActionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.textPrimary,
+  },
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: C.surface,
+    borderRadius: CARD_RADIUS,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+    gap: 6,
+  },
+  statIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.textPrimary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: C.textMuted,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: C.red + '50',
+    backgroundColor: C.red + '10',
+    marginBottom: 24,
+    gap: 10,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: C.red,
+  },
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  footerText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: C.textMuted,
+    marginBottom: 10,
   },
 });

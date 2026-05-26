@@ -1,45 +1,44 @@
-// ✅ Tipo reutilizável para o usuário COM role
+// ── Tipo reutilizável do usuário ──────────────────────────────────────────────
 export type UserData = {
   id: number;
   name: string;
   email: string;
-  role: 'user' | 'admin'; // ✅ NOVA propriedade
+  role: 'user' | 'admin';
   created_at?: string;
 };
 
-// ✅ Definição de todas as rotas e seus parâmetros
+// ── Rotas e parâmetros ────────────────────────────────────────────────────────
 export type RootStackParamList = {
-  // Login não recebe parâmetros
+  // sem parâmetros — tela inicial
   Login: undefined;
-  
-  // Dashboard recebe os dados do usuário logado
+
+  // usuário comum após login
   Dashboard: {
     user: UserData;
   };
-  
-  // ✅ NOVA rota - AdminDashboard recebe os dados do usuário admin
+
+  // administrador após login
   AdminDashboard: {
     user: UserData;
   };
-  
-  // Home recebe os dados do usuário logado
+
+  // detalhes do usuário logado
   Home: {
     user: UserData;
   };
 
-  // ✅ NOVA ROTA: Appointments recebe os dados do usuário
+  // agendamentos do usuário
   Appointments: {
     user: UserData;
   };
-  
-  // User pode receber dados do usuário para edição (opcional)
-  // Se não receber, é modo de criação de conta
+
+  // criação de conta (sem user) ou edição de perfil (com user)
   User: {
     user?: UserData;
   } | undefined;
 };
 
-// Declaração global para melhor autocomplete no TypeScript
+// ── Autocomplete global do TypeScript ─────────────────────────────────────────
 declare global {
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}

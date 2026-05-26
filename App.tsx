@@ -1,317 +1,302 @@
 import React, { useEffect, useState } from 'react';
-import { debugAllUsers, forceCreateAdmin, makeUserAdmin } from './src/database/services/userServices';
-import { 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  StyleSheet, 
-  Alert, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
   ScrollView,
-  Modal
+  Modal,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Routes from './src/routers';
 import { initDatabase } from './src/database/initDB';
 import { dbUtils } from './src/database/utils';
+import {
+  debugAllUsers,
+  makeUserAdmin,
+} from './src/database/services/userServices';
+import { seedAdmin } from './src/database/seedAdmin';
+
+// ── Tokens (mesmo sistema de todo o app) ─────────────────────────────────────
+const C = {
+  bg:      '#0f172a',
+  surface: '#1e293b',
+  border:  '#334155',
+
+  textPrimary:   '#f1f5f9',
+  textSecondary: '#94a3b8',
+  textMuted:     '#64748b',
+
+  blue:   '#3b82f6',
+  green:  '#10b981',
+  yellow: '#f59e0b',
+  red:    '#ef4444',
+};
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [dbError, setDbError] = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(true);
+  const [dbError, setDbError]       = useState<string | null>(null);
   const [showDevMenu, setShowDevMenu] = useState(false);
 
   useEffect(() => {
     initializeApp();
   }, []);
 
+  // ── inicialização ────────────────────────────────────────────────────────
 
   async function initializeApp() {
     try {
       console.log('🚀 Iniciando aplicação...');
-      
-      // Inicializar banco de dados
+
       const success = initDatabase();
-      
+
+     // dentro de initializeApp(), após initDatabase():
       if (success) {
         console.log('✅ Banco de dados pronto!');
-        
-        // ✅ REMOVIDO: Criação automática de admin
-        // const adminCreated = forceCreateAdmin(); // ← REMOVER APENAS ESTA LINHA
-        
-        // ✅ MANTIDO: Lógica de promoção (se o usuário existir)
-        console.log('🔍 Verificando promoções necessárias...');
-        const promoted = makeUserAdmin('adm01@gmail.com');
-        if (promoted) {
-          console.log('✅ adm01@gmail.com promovido para admin!');
-        } else {
-          console.log('ℹ️ Usuário adm01@gmail.com não encontrado para promoção');
-        }
-        
-        // ✅ Debug e estatísticas
-        console.log('👑 Verificando status final dos usuários...');
+
+        const result = seedAdmin();
+        console.log(`🌱 Seed admin: [${result.status}] ${result.message}`);
+
         debugAllUsers();
         dbUtils.stats();
       }
-      
-      // Simular carregamento
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1500);
-    
-  } catch (error: any) {
-    console.error('❌ Erro ao inicializar app:', error);
-    setDbError(error.message || 'Erro ao inicializar banco de dados');
-    setIsLoading(false);
-  }
-}
 
-  // Tela de loading
+      // Splash mínimo para o banco estar pronto
+      setTimeout(() => setIsLoading(false), 1200);
+    } catch (error: any) {
+      console.error('❌ Erro ao inicializar app:', error);
+      setDbError(error.message || 'Erro ao inicializar banco de dados');
+      setIsLoading(false);
+    }
+  }
+
+  // ── tela de loading ───────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-        <Text style={styles.loadingText}>Iniciando aplicação...</Text>
-        <Text style={styles.loadingSubtext}>Preparando banco de dados</Text>
+      <View style={styles.loadingScreen}>
+        <View style={styles.loadingCard}>
+          <View style={styles.loadingIconCircle}>
+            <MaterialIcons name="content-cut" size={36} color={C.blue} />
+          </View>
+          <Text style={styles.loadingTitle}>SmartBarber</Text>
+          <Text style={styles.loadingSubtitle}>Preparando o sistema...</Text>
+          <ActivityIndicator
+            size="large"
+            color={C.blue}
+            style={{ marginTop: 24 }}
+          />
+        </View>
       </View>
     );
   }
 
-  // Tela de erro
+  // ── tela de erro ─────────────────────────────────────────────────────────
+
   if (dbError) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorTitle}>Erro ao Inicializar</Text>
-        <Text style={styles.errorText}>{dbError}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton}
-          onPress={() => {
-            setDbError(null);
-            setIsLoading(true);
-            initializeApp();
-          }}
-        >
-          <Text style={styles.retryButtonText}>Tentar Novamente</Text>
-        </TouchableOpacity>
+      <View style={styles.errorScreen}>
+        <View style={styles.errorCard}>
+          <View style={styles.errorIconCircle}>
+            <MaterialIcons name="error-outline" size={40} color={C.red} />
+          </View>
+          <Text style={styles.errorTitle}>Erro ao Inicializar</Text>
+          <Text style={styles.errorMessage}>{dbError}</Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => {
+              setDbError(null);
+              setIsLoading(true);
+              initializeApp();
+            }}
+            activeOpacity={0.85}
+          >
+            <MaterialIcons name="refresh" size={18} color="#fff" />
+            <Text style={styles.retryBtnText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
-  // App normal
+  // ── app ───────────────────────────────────────────────────────────────────
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Routes />
-      
-      {/* Menu de Desenvolvimento (apenas em modo dev) */}
+
+      {/* ── Menu de Desenvolvimento (apenas __DEV__) ── */}
       {__DEV__ && (
         <>
-          <TouchableOpacity 
-            style={styles.devButton}
-            onPress={() => setShowDevMenu(!showDevMenu)}
+          <TouchableOpacity
+            style={styles.devFab}
+            onPress={() => setShowDevMenu(true)}
+            activeOpacity={0.85}
           >
-            <Text style={styles.devButtonText}>🔧</Text>
+            <Text style={styles.devFabText}>🔧</Text>
           </TouchableOpacity>
-          
+
           <Modal
             visible={showDevMenu}
             animationType="slide"
-            transparent={true}
+            transparent
             onRequestClose={() => setShowDevMenu(false)}
           >
-            <View style={styles.devMenuOverlay}>
-              <View style={styles.devMenu}>
+            <View style={styles.devOverlay}>
+              <View style={styles.devSheet}>
+                <View style={styles.devSheetHandle} />
+
+                <Text style={styles.devSheetTitle}>Menu de Desenvolvimento</Text>
+
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={styles.devMenuTitle}>🛠️ Menu de Desenvolvimento</Text>
-                  
-                  {/* Seed Database */}
-                  <TouchableOpacity 
-                    style={styles.devMenuItem}
+
+                  {/* Seed */}
+                  <DevMenuItem
+                    icon="🌱"
+                    label="Adicionar Dados de Teste"
+                    sub="Criar usuários de exemplo"
                     onPress={() => {
                       try {
                         dbUtils.seed();
-                        Alert.alert('✅ Sucesso', 'Dados de teste adicionados!\n\nVeja o console para as credenciais.');
-                      } catch (error: any) {
-                        Alert.alert('❌ Erro', error.message);
-                      }
+                        Alert.alert('Sucesso', 'Dados de teste adicionados!\nVeja o console para as credenciais.');
+                      } catch (e: any) { Alert.alert('Erro', e.message); }
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>🌱</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={styles.devMenuItemText}>Adicionar Dados de Teste</Text>
-                      <Text style={styles.devMenuItemSubtext}>Criar 5 usuários de exemplo</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Ver Estatísticas */}
-                  <TouchableOpacity 
-                    style={styles.devMenuItem}
+                  />
+
+                  {/* Stats */}
+                  <DevMenuItem
+                    icon="📊"
+                    label="Ver Estatísticas"
+                    sub="Informações do banco de dados"
                     onPress={() => {
                       try {
-                        const stats = dbUtils.stats();
+                        const s = dbUtils.stats();
                         Alert.alert(
-                          '📊 Estatísticas do Banco',
-                          `👥 Usuários: ${stats.users}\n🔑 Sessões: ${stats.sessions}\n⚙️ Configurações: ${stats.settings}\n💾 Tamanho: ${stats.databaseSize.totalKB} KB`,
-                          [{ text: 'OK' }]
+                          'Estatísticas do Banco',
+                          `👥 Usuários: ${s.users}\n🔑 Sessões: ${s.sessions}\n⚙️ Configurações: ${s.settings}\n📅 Agendamentos: ${s.appointments}\n💾 Tamanho: ${s.databaseSize.totalKB} KB`
                         );
-                      } catch (error: any) {
-                        Alert.alert('❌ Erro', error.message);
-                      }
+                      } catch (e: any) { Alert.alert('Erro', e.message); }
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>📊</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={styles.devMenuItemText}>Ver Estatísticas</Text>
-                      <Text style={styles.devMenuItemSubtext}>Informações do banco de dados</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Verificar Integridade */}
-                  <TouchableOpacity 
-                    style={styles.devMenuItem}
+                  />
+
+                  {/* Integridade */}
+                  <DevMenuItem
+                    icon="🔍"
+                    label="Verificar Integridade"
+                    sub="Checar consistência dos dados"
                     onPress={() => {
                       try {
-                        const isOk = dbUtils.check();
+                        const ok = dbUtils.check();
                         Alert.alert(
-                          isOk ? '✅ Integridade OK' : '❌ Integridade Falhou',
-                          isOk ? 'O banco de dados está íntegro!' : 'Foram encontrados problemas no banco.',
-                          [{ text: 'OK' }]
+                          ok ? 'Integridade OK' : 'Integridade Falhou',
+                          ok ? 'O banco de dados está íntegro!' : 'Foram encontrados problemas no banco.'
                         );
-                      } catch (error: any) {
-                        Alert.alert('❌ Erro', error.message);
-                      }
+                      } catch (e: any) { Alert.alert('Erro', e.message); }
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>🔍</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={styles.devMenuItemText}>Verificar Integridade</Text>
-                      <Text style={styles.devMenuItemSubtext}>Checar consistência dos dados</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Otimizar Banco */}
-                  <TouchableOpacity 
-                    style={styles.devMenuItem}
+                  />
+
+                  {/* Otimizar */}
+                  <DevMenuItem
+                    icon="⚡"
+                    label="Otimizar Banco"
+                    sub="Compactar e melhorar performance"
                     onPress={() => {
                       try {
                         dbUtils.optimize();
-                        Alert.alert('✅ Sucesso', 'Banco de dados otimizado!\n\nVeja o console para detalhes.');
-                      } catch (error: any) {
-                        Alert.alert('❌ Erro', error.message);
-                      }
+                        Alert.alert('Sucesso', 'Banco de dados otimizado!\nVeja o console para detalhes.');
+                      } catch (e: any) { Alert.alert('Erro', e.message); }
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>🔧</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={styles.devMenuItemText}>Otimizar Banco</Text>
-                      <Text style={styles.devMenuItemSubtext}>Compactar e melhorar performance</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Fazer Backup */}
-                  <TouchableOpacity 
-                    style={styles.devMenuItem}
+                  />
+
+                  {/* Backup */}
+                  <DevMenuItem
+                    icon="💾"
+                    label="Fazer Backup"
+                    sub="Exportar dados atuais para o console"
                     onPress={() => {
                       try {
                         const backup = dbUtils.backup();
-                        console.log('💾 Backup criado:', backup);
-                        Alert.alert('✅ Sucesso', 'Backup criado!\n\nVeja o console para os dados.');
-                      } catch (error: any) {
-                        Alert.alert('❌ Erro', error.message);
-                      }
+                        console.log('💾 Backup:', backup);
+                        Alert.alert('Sucesso', 'Backup criado!\nVeja o console para os dados.');
+                      } catch (e: any) { Alert.alert('Erro', e.message); }
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>💾</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={styles.devMenuItemText}>Fazer Backup</Text>
-                      <Text style={styles.devMenuItemSubtext}>Exportar dados atuais</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Divisor */}
-                  <View style={styles.devMenuDivider} />
-                  
-                  {/* Limpar Dados */}
-                  <TouchableOpacity 
-                    style={[styles.devMenuItem, styles.devMenuItemWarning]}
+                  />
+
+                  <View style={styles.devDivider} />
+
+                  {/* Limpar dados */}
+                  <DevMenuItem
+                    icon="🧹"
+                    label="Limpar Todos os Dados"
+                    sub="Deleta dados, mantém estrutura"
+                    variant="warning"
                     onPress={() => {
                       Alert.alert(
-                        '⚠️ Confirmar',
-                        'Isso vai deletar TODOS os dados, mas manter a estrutura do banco.\n\nDeseja continuar?',
+                        'Confirmar',
+                        'Isso vai deletar TODOS os dados, mas manter a estrutura do banco. Deseja continuar?',
                         [
                           { text: 'Cancelar', style: 'cancel' },
-                          { 
-                            text: 'Limpar', 
+                          {
+                            text: 'Limpar',
                             style: 'destructive',
                             onPress: () => {
                               try {
                                 dbUtils.clear();
-                                Alert.alert('✅ Sucesso', 'Todos os dados foram limpos!');
-                              } catch (error: any) {
-                                Alert.alert('❌ Erro', error.message);
-                              }
-                            }
-                          }
+                                Alert.alert('Sucesso', 'Todos os dados foram limpos!');
+                              } catch (e: any) { Alert.alert('Erro', e.message); }
+                            },
+                          },
                         ]
                       );
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>🧹</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={[styles.devMenuItemText, styles.devMenuItemTextWarning]}>
-                        Limpar Todos os Dados
-                      </Text>
-                      <Text style={styles.devMenuItemSubtext}>Deletar dados, manter estrutura</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {/* Resetar Banco */}
-                  <TouchableOpacity 
-                    style={[styles.devMenuItem, styles.devMenuItemDanger]}
+                  />
+
+                  {/* Resetar banco */}
+                  <DevMenuItem
+                    icon="🔄"
+                    label="Resetar Banco de Dados"
+                    sub="⚠️ DELETA TUDO e recria do zero"
+                    variant="danger"
                     onPress={() => {
                       Alert.alert(
-                        '🚨 ATENÇÃO',
-                        'Isso vai DELETAR e RECRIAR todo o banco de dados!\n\nTODOS os dados serão PERMANENTEMENTE perdidos!\n\nDeseja continuar?',
+                        'ATENÇÃO',
+                        'Isso vai DELETAR e RECRIAR todo o banco!\n\nTODOS os dados serão PERMANENTEMENTE perdidos!\n\nDeseja continuar?',
                         [
                           { text: 'Cancelar', style: 'cancel' },
-                          { 
-                            text: 'RESETAR', 
+                          {
+                            text: 'RESETAR',
                             style: 'destructive',
                             onPress: () => {
                               try {
                                 dbUtils.reset();
-                                Alert.alert('✅ Sucesso', 'Banco de dados resetado!\n\nO app será reiniciado.');
-                                // Reiniciar app
-                                setIsLoading(true);
                                 setShowDevMenu(false);
+                                setIsLoading(true);
                                 initializeApp();
-                              } catch (error: any) {
-                                Alert.alert('❌ Erro', error.message);
-                              }
-                            }
-                          }
+                              } catch (e: any) { Alert.alert('Erro', e.message); }
+                            },
+                          },
                         ]
                       );
                     }}
-                  >
-                    <Text style={styles.devMenuItemIcon}>🔄</Text>
-                    <View style={styles.devMenuItemContent}>
-                      <Text style={[styles.devMenuItemText, styles.devMenuItemTextDanger]}>
-                        Resetar Banco de Dados
-                      </Text>
-                      <Text style={styles.devMenuItemSubtext}>⚠️ DELETA TUDO e recria</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
+                  />
+
+                  <View style={{ height: 16 }} />
                 </ScrollView>
-                
-                {/* Botão Fechar */}
-                <TouchableOpacity 
-                  style={styles.devMenuCloseButton}
+
+                {/* Fechar */}
+                <TouchableOpacity
+                  style={styles.devCloseBtn}
                   onPress={() => setShowDevMenu(false)}
+                  activeOpacity={0.85}
                 >
-                  <MaterialIcons name="close" size={24} color="#fff" />
-                  <Text style={styles.devMenuCloseText}>Fechar Menu</Text>
+                  <MaterialIcons name="close" size={18} color="#fff" />
+                  <Text style={styles.devCloseBtnText}>Fechar</Text>
                 </TouchableOpacity>
+
+                <View style={{ height: Platform.OS === 'ios' ? 34 : 16 }} />
               </View>
             </View>
           </Modal>
@@ -321,164 +306,261 @@ export default function App() {
   );
 }
 
+// ── Componente interno: item do menu dev ─────────────────────────────────────
+
+function DevMenuItem({
+  icon,
+  label,
+  sub,
+  variant,
+  onPress,
+}: {
+  icon: string;
+  label: string;
+  sub: string;
+  variant?: 'warning' | 'danger';
+  onPress: () => void;
+}) {
+  const bg =
+    variant === 'danger'  ? C.red    + '15' :
+    variant === 'warning' ? C.yellow + '15' :
+    C.surface;
+
+  const borderColor =
+    variant === 'danger'  ? C.red    + '50' :
+    variant === 'warning' ? C.yellow + '50' :
+    C.border;
+
+  const labelColor =
+    variant === 'danger'  ? C.red    :
+    variant === 'warning' ? C.yellow :
+    C.textPrimary;
+
+  return (
+    <TouchableOpacity
+      style={[styles.devItem, { backgroundColor: bg, borderColor }]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.devItemIcon}>{icon}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.devItemLabel, { color: labelColor }]}>{label}</Text>
+        <Text style={styles.devItemSub}>{sub}</Text>
+      </View>
+      <MaterialIcons name="chevron-right" size={18} color={C.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
+// ── Estilos ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
+
   // Loading
-  loadingContainer: {
+  loadingScreen: {
     flex: 1,
+    backgroundColor: C.bg,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    padding: 24,
   },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+  loadingCard: {
+    backgroundColor: C.surface,
+    borderRadius: 24,
+    padding: 40,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  loadingSubtext: {
-    marginTop: 8,
+  loadingIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: C.blue + '15',
+    borderWidth: 2,
+    borderColor: C.blue + '40',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  loadingTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: C.textPrimary,
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  loadingSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: C.textMuted,
+    fontWeight: '500',
   },
-  
+
   // Error
-  errorContainer: {
+  errorScreen: {
     flex: 1,
+    backgroundColor: C.bg,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    padding: 24,
   },
-  errorIcon: {
-    fontSize: 80,
+  errorCard: {
+    backgroundColor: C.surface,
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  errorIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: C.red + '15',
+    borderWidth: 2,
+    borderColor: C.red + '40',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
   },
   errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#dc3545',
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.red,
     marginBottom: 10,
   },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
+  errorMessage: {
+    fontSize: 14,
+    color: C.textSecondary,
     textAlign: 'center',
-    marginBottom: 30,
+    lineHeight: 20,
+    marginBottom: 28,
   },
-  retryButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 8,
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.blue,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    gap: 8,
+    width: '100%',
   },
-  retryButtonText: {
+  retryBtnText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
   },
-  
-  // Dev Button
-  devButton: {
+
+  // Dev FAB
+  devFab: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 24,
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007bff',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: C.surface,
+    borderWidth: 1.5,
+    borderColor: C.border,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
-  devButtonText: {
-    fontSize: 30,
+  devFabText: {
+    fontSize: 22,
   },
-  
-  // Dev Menu
-  devMenuOverlay: {
+
+  // Dev Sheet
+  devOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
-  devMenu: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingTop: 20,
+  devSheet: {
+    backgroundColor: C.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
     paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderColor: C.border,
   },
-  devMenuTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  devSheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.border,
+    alignSelf: 'center',
     marginBottom: 20,
-    color: '#333',
-    textAlign: 'center',
   },
-  devMenuItem: {
+  devSheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: C.textPrimary,
+    textAlign: 'center',
+    marginBottom: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
+  // Dev Item
+  devItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
+    padding: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    gap: 14,
   },
-  devMenuItemIcon: {
-    fontSize: 32,
-    marginRight: 15,
+  devItemIcon: {
+    fontSize: 26,
+    width: 34,
+    textAlign: 'center',
   },
-  devMenuItemContent: {
-    flex: 1,
+  devItemLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 3,
   },
-  devMenuItemText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  devMenuItemSubtext: {
+  devItemSub: {
     fontSize: 12,
-    color: '#666',
+    color: C.textMuted,
   },
-  devMenuItemWarning: {
-    backgroundColor: '#fff3cd',
-    borderWidth: 1,
-    borderColor: '#ffc107',
-  },
-  devMenuItemTextWarning: {
-    color: '#856404',
-  },
-  devMenuItemDanger: {
-    backgroundColor: '#f8d7da',
-    borderWidth: 1,
-    borderColor: '#dc3545',
-  },
-  devMenuItemTextDanger: {
-    color: '#721c24',
-  },
-  devMenuDivider: {
+
+  devDivider: {
     height: 1,
-    backgroundColor: '#dee2e6',
-    marginVertical: 15,
+    backgroundColor: C.border,
+    marginVertical: 12,
   },
-  devMenuCloseButton: {
+
+  // Dev close
+  devCloseBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6c757d',
-    padding: 15,
+    backgroundColor: C.surface,
     borderRadius: 12,
-    marginTop: 10,
-    marginBottom: 20,
+    paddingVertical: 14,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    gap: 8,
   },
-  devMenuCloseText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
+  devCloseBtnText: {
+    color: C.textSecondary,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

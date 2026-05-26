@@ -1,85 +1,69 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-// Importar as telas
-import Login from '../pages/login';
-import Dashboard from '../pages/dashboard';
-import AdminDashboard from '../pages/adminDashboard'; // ✅ NOVA importação
-import Home from '../pages/home';
-import User from '../pages/user';
-
-// Importar tipagem
 import { RootStackParamList } from './types';
-import Appointments from '../pages/appointments';
+
+import Login         from '../pages/login';
+import Dashboard     from '../pages/dashboard';
+import AdminDashboard from '../pages/adminDashboard';
+import Home          from '../pages/home';
+import User          from '../pages/user';
+import Appointments  from '../pages/appointments';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function Routes() {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Login"
-        screenOptions={{ 
+        screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
-          contentStyle: { backgroundColor: '#fff' },
+          // ✅ CORRIGIDO: fundo consistente com o dark theme do app
+          contentStyle: { backgroundColor: '#0f172a' },
         }}
       >
-        {/* Tela de Login - Tela inicial */}
-        <Stack.Screen 
-          name="Login" 
+        <Stack.Screen
+          name="Login"
           component={Login}
-          options={{
-            animation: 'fade',
-          }}
+          options={{ animation: 'fade' }}
         />
-        
-        {/* Dashboard - Hub principal após login (usuário comum) */}
-        <Stack.Screen 
-          name="Dashboard" 
+
+        <Stack.Screen
+          name="Dashboard"
           component={Dashboard}
           options={{
             gestureEnabled: false,
             animation: 'slide_from_bottom',
           }}
         />
-        
-        {/* ✅ NOVA tela - AdminDashboard - Hub administrativo */}
-        <Stack.Screen 
-          name="AdminDashboard" 
+
+        <Stack.Screen
+          name="AdminDashboard"
           component={AdminDashboard}
           options={{
-            gestureEnabled: false, // Impede voltar com gesto
+            gestureEnabled: false,
             animation: 'slide_from_bottom',
           }}
         />
-        
-        {/* Home - Informações detalhadas do usuário */}
-        <Stack.Screen 
-          name="Home" 
+
+        <Stack.Screen
+          name="Home"
           component={Home}
-          options={{
-            animation: 'slide_from_right',
-          }}
+          options={{ animation: 'slide_from_right' }}
         />
 
-         {/* ✅ NOVA ROTA: Appointments */}
-        <Stack.Screen 
-          name="Appointments" 
+        <Stack.Screen
+          name="Appointments"
           component={Appointments}
-          options={{
-            animation: 'slide_from_right',
-          }}
+          options={{ animation: 'slide_from_right' }}
         />
-        
-        {/* User - Criar conta ou editar perfil */}
-        <Stack.Screen 
-          name="User" 
+
+        <Stack.Screen
+          name="User"
           component={User}
-          options={{
-            animation: 'slide_from_right',
-          }}
+          options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
